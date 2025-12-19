@@ -294,192 +294,187 @@
 
         // Random Game Selector
         function surpriseMe() {
-            // Define all games with their emojis and names
+            // Define all games with their colors
             const allGames = [
-                {id: 'lawyer_setup', name: 'المحامي اللعين', emoji: '👨‍⚖️'},
-                {id: 'indian_setup', name: 'سيناريو هندي', emoji: '🎬'},
-                {id: 'bomb_setup', name: 'القنبلة', emoji: '💣'},
-                {id: 'taboo_setup', name: 'أوعى تقولها', emoji: '🚫'},
-                {id: 'story_setup', name: 'حكاية في كلمتين', emoji: '📖'},
-                {id: 'artist_setup', name: 'الرسام الأعمى', emoji: '🎨'},
-                {id: 'morph_setup', name: 'الكلمة المتحولة', emoji: '🔤'},
-                {id: 'whisper_setup', name: 'إقرأ شفايفي', emoji: '🎧'},
-                {id: 'debate_setup', name: 'محكمة', emoji: '⚖️'},
-                {id: 'never_setup', name: 'أنا عمري ما', emoji: '✋'},
-                {id: 'heads_up_setup', name: 'على راسي', emoji: '🤯'},
-                {id: 'emoji_setup', name: 'فك الإيموجي', emoji: '🧩'},
-                {id: 'lyrics_setup', name: 'كمل الأغنية', emoji: '🎤'},
-                {id: 'unscramble_setup', name: 'رتبها صح', emoji: '🔀'},
-                {id: 'five_second_setup', name: 'خمسة عليك', emoji: '⏱️'},
-                {id: 'spy_setup', name: 'الجاسوس', emoji: '🕵️'},
-                {id: 'charades_setup', name: 'بدون كلام', emoji: '🎭'},
-                {id: 'quotes_setup', name: 'الافيهات', emoji: '🎬'},
-                {id: 'bus_setup', name: 'أوتوبيس', emoji: '🚌'},
-                {id: 'liar_setup', name: 'الكداب', emoji: '🃏'},
-                {id: 'auction_setup', name: 'المزاد', emoji: '🔨'},
-                {id: 'gibberish_setup', name: 'فك الشفرة', emoji: '🗣️'},
-                {id: 'hum_setup', name: 'طربني', emoji: '🎵'},
-                {id: 'likely_setup', name: 'مين الكارثة', emoji: '👉'}
+                {id: 'lawyer_setup', name: 'المحامي اللعين', emoji: '👨‍⚖️', color: 'bg-slate-700'},
+                {id: 'indian_setup', name: 'سيناريو هندي', emoji: '🎬', color: 'bg-orange-600'},
+                {id: 'bomb_setup', name: 'القنبلة', emoji: '💣', color: 'bg-red-700'},
+                {id: 'taboo_setup', name: 'أوعى تقولها', emoji: '🚫', color: 'bg-rose-900'},
+                {id: 'story_setup', name: 'حكاية في كلمتين', emoji: '📖', color: 'bg-amber-600'},
+                {id: 'artist_setup', name: 'الرسام الأعمى', emoji: '🎨', color: 'bg-fuchsia-600'},
+                {id: 'morph_setup', name: 'الكلمة المتحولة', emoji: '🔤', color: 'bg-cyan-700'},
+                {id: 'whisper_setup', name: 'إقرأ شفايفي', emoji: '🎧', color: 'bg-pink-500'},
+                {id: 'debate_setup', name: 'محكمة', emoji: '⚖️', color: 'bg-amber-700'},
+                {id: 'never_setup', name: 'أنا عمري ما', emoji: '✋', color: 'bg-rose-800'},
+                {id: 'heads_up_setup', name: 'على راسي', emoji: '🤯', color: 'bg-blue-600'},
+                {id: 'emoji_setup', name: 'فك الإيموجي', emoji: '🧩', color: 'bg-yellow-500'},
+                {id: 'lyrics_setup', name: 'كمل الأغنية', emoji: '🎤', color: 'bg-purple-500'},
+                {id: 'unscramble_setup', name: 'رتبها صح', emoji: '🔀', color: 'bg-green-600'},
+                {id: 'five_second_setup', name: 'خمسة عليك', emoji: '⏱️', color: 'bg-teal-600'},
+                {id: 'spy_setup', name: 'الجاسوس', emoji: '🕵️', color: 'bg-indigo-600'},
+                {id: 'charades_setup', name: 'بدون كلام', emoji: '🎭', color: 'bg-rose-600'},
+                {id: 'quotes_setup', name: 'الافيهات', emoji: '🎬', color: 'bg-emerald-600'},
+                {id: 'bus_setup', name: 'أوتوبيس', emoji: '🚌', color: 'bg-purple-600'},
+                {id: 'liar_setup', name: 'الكداب', emoji: '🃏', color: 'bg-orange-600'},
+                {id: 'auction_setup', name: 'المزاد', emoji: '🔨', color: 'bg-cyan-600'},
+                {id: 'gibberish_setup', name: 'فك الشفرة', emoji: '🗣️', color: 'bg-pink-600'},
+                {id: 'hum_setup', name: 'طربني', emoji: '🎵', color: 'bg-yellow-600'},
+                {id: 'likely_setup', name: 'مين الكارثة', emoji: '👉', color: 'bg-red-600'}
             ];
             
             // Pick the winner
             const winner = allGames[Math.floor(Math.random() * allGames.length)];
             
-            // Create overlay
+            // Shuffle and pick 9 games for the grid (ensure winner is included)
+            const shuffled = [...allGames].sort(() => Math.random() - 0.5);
+            let gridGames = shuffled.slice(0, 9);
+            
+            // Ensure winner is in the grid
+            if (!gridGames.find(g => g.id === winner.id)) {
+                gridGames[Math.floor(Math.random() * 9)] = winner;
+            }
+            
+            // Create overlay with backdrop blur
             const overlay = document.createElement('div');
-            overlay.id = 'slot-machine-overlay';
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.95);
-                z-index: 9999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                animation: fadeIn 0.3s ease-out;
-            `;
+            overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-md';
+            overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+            overlay.style.animation = 'fadeIn 0.3s ease-out';
             
-            // Create slot machine container
-            const slotMachine = document.createElement('div');
-            slotMachine.style.cssText = `
-                width: 280px;
-                height: 400px;
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-                border-radius: 24px;
-                border: 4px solid #ffd700;
-                box-shadow: 0 0 40px rgba(255, 215, 0, 0.5), 0 0 80px rgba(255, 215, 0, 0.3);
-                overflow: hidden;
-                position: relative;
-            `;
+            // Create container
+            const container = document.createElement('div');
+            container.className = 'flex flex-col items-center gap-6 p-6';
             
-            // Add decorative corners
-            slotMachine.innerHTML = `
-                <div style="position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px; border: 2px solid rgba(255, 215, 0, 0.3); border-radius: 20px; pointer-events: none;"></div>
-                <div style="position: absolute; top: 0; left: 0; right: 0; text-align: center; padding: 15px; background: linear-gradient(to bottom, rgba(255, 215, 0, 0.2), transparent); font-size: 24px; font-weight: bold; color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);">
-                    🎰 لعبتك النهاردة 🎰
-                </div>
-            `;
+            // Add title
+            const title = document.createElement('div');
+            title.className = 'text-3xl font-black text-slate-800 text-center';
+            title.innerHTML = '🎲 فاجئني 🎲';
+            container.appendChild(title);
             
-            // Create reel window
-            const reelWindow = document.createElement('div');
-            reelWindow.style.cssText = `
-                position: absolute;
-                top: 80px;
-                left: 40px;
-                right: 40px;
-                height: 240px;
-                background: rgba(0, 0, 0, 0.5);
-                border-radius: 16px;
-                overflow: hidden;
-                box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.8);
-            `;
+            // Create 3x3 grid
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-3 gap-3';
+            grid.style.width = '320px';
             
-            // Create reel strip (repeat games for seamless loop)
-            const reelStrip = document.createElement('div');
-            reelStrip.id = 'reel-strip';
-            const gamesRepeated = [...allGames, ...allGames, ...allGames, ...allGames];
+            // Create game cards
+            gridGames.forEach((game, index) => {
+                const card = document.createElement('div');
+                card.className = `${game.color} rounded-2xl shadow-lg text-white flex flex-col items-center justify-center transition-all duration-200`;
+                card.style.width = '100px';
+                card.style.height = '100px';
+                card.dataset.index = index;
+                card.innerHTML = `
+                    <div class="text-4xl mb-1">${game.emoji}</div>
+                    <div class="text-xs font-bold text-center px-2 leading-tight">${game.name}</div>
+                `;
+                grid.appendChild(card);
+            });
             
-            reelStrip.innerHTML = gamesRepeated.map(game => `
-                <div style="height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-                    <div style="font-size: 40px; margin-bottom: 4px;">${game.emoji}</div>
-                    <div style="font-size: 14px; font-weight: bold; color: white; text-align: center;">${game.name}</div>
-                </div>
-            `).join('');
+            container.appendChild(grid);
             
-            reelStrip.style.cssText = `
-                position: absolute;
-                width: 100%;
-                top: 0;
-            `;
+            // Result text (hidden initially)
+            const resultText = document.createElement('div');
+            resultText.className = 'text-2xl font-bold text-slate-800 text-center opacity-0 transition-opacity duration-300';
+            resultText.style.minHeight = '32px';
+            container.appendChild(resultText);
             
-            reelWindow.appendChild(reelStrip);
-            slotMachine.appendChild(reelWindow);
-            overlay.appendChild(slotMachine);
+            overlay.appendChild(container);
             document.body.appendChild(overlay);
             
-            // Add CSS animations
+            // Add fade animations to head
             const style = document.createElement('style');
             style.textContent = `
                 @keyframes fadeIn {
                     from { opacity: 0; }
                     to { opacity: 1; }
                 }
-                
                 @keyframes fadeOut {
                     from { opacity: 1; }
                     to { opacity: 0; }
                 }
-                
-                @keyframes spin {
-                    from { transform: translateY(0); }
-                    to { transform: translateY(-${80 * allGames.length}px); }
-                }
-                
-                @keyframes flash {
-                    0%, 100% { transform: scale(1); filter: brightness(1); }
-                    50% { transform: scale(1.15); filter: brightness(1.5); }
-                }
-                
-                .spinning {
-                    animation: spin 0.15s linear infinite;
-                    filter: blur(3px);
-                }
-                
-                .winner-flash {
-                    animation: flash 0.5s ease-in-out 3;
-                }
             `;
             document.head.appendChild(style);
             
-            // Start spinning animation
-            reelStrip.classList.add('spinning');
+            // Roulette animation logic
+            let currentIndex = 0;
+            let delay = 50; // Start fast
+            const maxDelay = 400; // End slow
+            let iterations = 0;
+            const totalIterations = 40; // Total jumps
             
-            // Play ticking sound
-            let tickInterval;
-            const playTick = () => {
-                const audio = new Audio();
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = ctx.createOscillator();
-                const gainNode = ctx.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(ctx.destination);
-                
-                oscillator.frequency.value = 800;
-                oscillator.type = 'square';
-                
-                gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-                
-                oscillator.start(ctx.currentTime);
-                oscillator.stop(ctx.currentTime + 0.05);
-            };
+            const cards = grid.querySelectorAll('div[data-index]');
+            const winnerIndex = gridGames.findIndex(g => g.id === winner.id);
             
-            tickInterval = setInterval(playTick, 50);
+            function highlightCard(index) {
+                // Remove highlight from all
+                cards.forEach(card => {
+                    card.style.transform = 'scale(1)';
+                    card.style.boxShadow = '';
+                    card.style.border = '';
+                    card.style.zIndex = '0';
+                });
+                
+                // Add highlight to current
+                const card = cards[index];
+                card.style.transform = 'scale(1.1)';
+                card.style.boxShadow = '0 0 0 4px white, 0 8px 30px rgba(0, 0, 0, 0.3)';
+                card.style.zIndex = '10';
+                
+                // Play tick sound
+                if (iterations < totalIterations - 5) {
+                    playTone(600, 'square', 0.05);
+                }
+            }
             
-            // Stop after 2 seconds
-            setTimeout(() => {
-                clearInterval(tickInterval);
-                reelStrip.classList.remove('spinning');
+            function animate() {
+                highlightCard(currentIndex);
+                iterations++;
                 
-                // Calculate position to show winner in center
-                const winnerIndex = allGames.findIndex(g => g.id === winner.id) + allGames.length * 2; // Use middle repetition
-                const targetPosition = -(winnerIndex * 80 - 80); // Center it
-                reelStrip.style.transition = 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                reelStrip.style.transform = `translateY(${targetPosition}px)`;
+                // Calculate next delay (exponential slowdown)
+                const progress = iterations / totalIterations;
+                delay = 50 + (maxDelay - 50) * Math.pow(progress, 2);
                 
-                // Play win sound and add flash
+                // Decide next index
+                if (iterations < totalIterations - 5) {
+                    // Random jump
+                    currentIndex = Math.floor(Math.random() * 9);
+                } else if (iterations < totalIterations) {
+                    // Last few jumps, move towards winner
+                    const neighbors = [
+                        winnerIndex,
+                        (winnerIndex + 1) % 9,
+                        (winnerIndex - 1 + 9) % 9
+                    ];
+                    currentIndex = neighbors[Math.floor(Math.random() * neighbors.length)];
+                } else {
+                    // Final stop on winner
+                    currentIndex = winnerIndex;
+                    stopAnimation();
+                    return;
+                }
+                
+                setTimeout(animate, delay);
+            }
+            
+            function stopAnimation() {
+                // Final highlight
+                highlightCard(winnerIndex);
+                
+                // Winner effects
                 setTimeout(() => {
+                    const winnerCard = cards[winnerIndex];
+                    winnerCard.style.boxShadow = '0 0 0 6px white, 0 0 40px rgba(255, 215, 0, 0.8)';
+                    
+                    // Play success sound
                     playSound('correct');
-                    reelStrip.classList.add('winner-flash');
                     
-                    // Add golden glow
-                    reelWindow.style.boxShadow = 'inset 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 50px rgba(255, 215, 0, 0.8)';
+                    // Show confetti
+                    createConfetti();
                     
-                    // Navigate after celebration
+                    // Show result text
+                    resultText.textContent = winner.name;
+                    resultText.style.opacity = '1';
+                    
+                    // Navigate after delay
                     setTimeout(() => {
                         overlay.style.animation = 'fadeOut 0.3s ease-out';
                         setTimeout(() => {
@@ -487,9 +482,14 @@
                             document.head.removeChild(style);
                             navigate(winner.id);
                         }, 300);
-                    }, 800);
-                }, 600);
-            }, 2000);
+                    }, 1000);
+                }, 100);
+            }
+            
+            // Start animation after brief delay
+            setTimeout(() => {
+                animate();
+            }, 300);
         }
 
         // Create floating +1 animation
