@@ -1,0 +1,2197 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لعبة القعدة - النسخة الأصلية</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- iOS PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="القعدة">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#f43f5e">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/gameData.js"></script>
+    <style>
+        * { font-family: 'Cairo', sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: #f8f9fa;
+            background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px), radial-gradient(#cbd5e1 1.5px, #f8f9fa 1.5px);
+            background-size: 24px 24px;
+            background-position: 0 0, 12px 12px;
+            overscroll-behavior: none;
+            user-select: none;
+        }
+        
+        /* Page Transitions - Snappy Entry Animation */
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(10px) scale(0.98); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+        .animate-enter {
+            animation: slideIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        
+        /* Legacy Animation Support */
+        .animate-in { animation: slideIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .animate-pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .rotate-90-text { transform: rotate(90deg); white-space: nowrap; }
+        .bomb-pulse { animation: bomb 0.5s infinite; }
+        @keyframes bomb { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        
+        /* Floating Point Animation */
+        .floating-point {
+            position: fixed;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #10b981;
+            text-shadow: 0 2px 8px rgba(16, 185, 129, 0.5);
+            pointer-events: none;
+            z-index: 9999;
+            animation: floatUp 1.5s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { 
+                opacity: 1; 
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-40px) scale(1.2);
+            }
+            100% { 
+                opacity: 0; 
+                transform: translateY(-100px) scale(0.8);
+            }
+        }
+        
+        /* Confetti Particle */
+        .confetti-particle {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 9998;
+            animation: confettiFall 2s ease-out forwards;
+        }
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Surprise Me Button Gradient */
+        .surprise-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+    </style>
+</head>
+<body>
+    <div id="app" class="min-h-screen">
+        <div class="max-w-md mx-auto min-h-screen shadow-2xl bg-white/95 backdrop-blur-sm relative overflow-hidden border-x-2 border-slate-100 flex flex-col">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-rose-500 via-amber-400 to-indigo-500 z-50"></div>
+            
+            <!-- Global Controls - Vertical Glass Bar -->
+            <div id="control-bar" class="fixed top-4 left-4 z-50 flex flex-col items-center bg-white/25 backdrop-blur-lg border border-white/30 shadow-lg rounded-full p-2 gap-2 transition-all hover:bg-white/35">
+                <!-- Sound Button (Top) -->
+                <button onclick="toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:scale-110 hover:bg-white/70 transition-all shadow-sm text-gray-800">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                </button>
+                
+                <!-- Home Button (Bottom) -->
+                <button onclick="goHome()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:scale-110 hover:bg-white/70 transition-all shadow-sm text-gray-800">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </button>
+            </div>
+
+            <div id="screen-container" class="flex-1 flex flex-col h-full overflow-hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // ===== GLOBAL VARIABLES =====
+        let gameInterval = null; 
+
+        // ===== STATE =====
+        let state = {
+            screen: 'home',
+            isMuted: false,
+            daresEnabled: false,
+            teamMode: false, // وضع الفرق
+            teamsSetupTab: 'A', // التبويب النشط في إعداد الفرق
+            players: [
+                { id: 1, name: 'اللاعب ١', score: 0 },
+                { id: 2, name: 'اللاعب ٢', score: 0 },
+                { id: 3, name: 'اللاعب ٣', score: 0 }
+            ],
+            teams: [
+                { id: 'A', name: 'فريق أ', score: 0, color: 'text-rose-600', members: [] },
+                { id: 'B', name: 'فريق ب', score: 0, color: 'text-indigo-600', members: [] }
+            ],
+            turnQueue: [], // For fair distribution
+            usedItems: {}, // Track used content per category (No-Repeat System)
+            currentGame: null
+        };
+
+        // ===== LOCAL STORAGE FUNCTIONS =====
+        function saveState() {
+            try {
+                localStorage.setItem('party_game_v1', JSON.stringify(state));
+            } catch (e) {
+                console.error('Save failed:', e);
+            }
+        }
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem('party_game_v1');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    // Merge saved state with defaults to ensure all fields exist
+                    state = { ...state, ...parsed };
+                    
+                    // ⚠️ ALWAYS START AT HOME SCREEN
+                    // We want to keep scores/players/teams but always land on the main menu
+                    state.screen = 'home';
+                    
+                    // Ensure queues are properly restored
+                    if (!state.turnQueue) state.turnQueue = [];
+                    if (!state.usedItems) state.usedItems = {};
+                }
+            } catch (e) {
+                console.error('Load failed:', e);
+            }
+        }
+
+        // ===== AUDIO =====
+        // Initialize Audio Context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playTone(freq, type, duration) {
+            if (state.isMuted) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume(); // Fix for Chrome autoplay policy
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = type; // 'sine', 'square', 'sawtooth', 'triangle'
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSound(type) {
+            if (state.isMuted) return;
+
+            switch (type) {
+                case 'tick':
+                    playTone(800, 'square', 0.05); // Short tick
+                    break;
+                case 'click':
+                    playTone(600, 'sine', 0.05); // Soft click
+                    break;
+                case 'success':
+                    // High pitch "Ding"
+                    playTone(1200, 'sine', 0.1);
+                    setTimeout(() => playTone(1800, 'sine', 0.2), 100);
+                    break;
+                case 'fail':
+                    // Low pitch "Buzz"
+                    playTone(300, 'sawtooth', 0.3);
+                    setTimeout(() => playTone(250, 'sawtooth', 0.3), 150);
+                    break;
+                case 'bomb':
+                    // Rapid warning beeps
+                    playTone(800, 'square', 0.1);
+                    setTimeout(() => playTone(600, 'square', 0.3), 100);
+                    break;
+                case 'bomb_tick':
+                    // Short urgent beep for bomb timer
+                    playTone(1000, 'square', 0.08);
+                    break;
+                case 'explode':
+                    // Explosion effect - descending noise
+                    playTone(200, 'sawtooth', 0.5);
+                    setTimeout(() => playTone(100, 'sawtooth', 0.5), 100);
+                    break;
+                case 'win':
+                    // Victory melody
+                    playTone(500, 'sine', 0.2);
+                    setTimeout(() => playTone(700, 'sine', 0.2), 200);
+                    setTimeout(() => playTone(1000, 'sine', 0.4), 400);
+                    break;
+            }
+        }
+
+        // ===== HELPERS =====
+        function toggleMute() {
+            state.isMuted = !state.isMuted;
+            const btn = document.getElementById('muteBtn');
+            
+            if (state.isMuted) {
+                // Muted: Red background with X icon
+                btn.className = 'p-2 bg-red-100 rounded-full shadow-md text-red-500 hover:bg-red-200 transition';
+                btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>';
+            } else {
+                // Unmuted: Normal style with speaker icon
+                btn.className = 'p-2 bg-white rounded-full shadow-md text-slate-600 hover:bg-slate-50 transition';
+                btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+            }
+            
+            saveState();
+            playSound('click');
+        }
+        function goHome() { 
+            playSound('click'); 
+            if (gameInterval) clearInterval(gameInterval);
+            state.currentGame = null; 
+            saveState();
+            navigate('home'); 
+        }
+        // Navigate with instant snappy transition
+        function navigate(screen) { 
+            playSound('click'); 
+            // ⚠️ CRITICAL: Stop any running game timers immediately
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+            state.screen = screen; 
+            render(); // Immediate render with entry animation
+        }
+
+        // Random Game Selector
+        function surpriseMe() {
+            // DYNAMIC GAME DISCOVERY: Query the DOM for actual game buttons
+            const gameButtons = document.querySelectorAll('button[onclick*="navigate("]');
+            const allGames = [];
+            
+            gameButtons.forEach(button => {
+                try {
+                    // Extract game ID from onclick attribute
+                    const onclickAttr = button.getAttribute('onclick');
+                    const match = onclickAttr.match(/navigate\(['"]([^'"]+)['"]\)/);
+                    
+                    if (!match) return;
+                    const gameId = match[1];
+                    
+                    // Skip non-game screens (players, scores, etc.)
+                    if (!gameId.includes('_setup')) return;
+                    
+                    // Extract emoji from the button (first div with large text)
+                    const emojiDiv = button.querySelector('div.text-5xl, div[style*="font-size: 40px"]');
+                    const emoji = emojiDiv ? emojiDiv.textContent.trim() : '🎮';
+                    
+                    // Extract title (look for the bold text/span)
+                    const titleSpan = button.querySelector('span.text-lg, span[style*="font-weight: bold"]');
+                    const name = titleSpan ? titleSpan.textContent.trim() : gameId;
+                    
+                    // Extract color from button classes
+                    const classList = button.className;
+                    const colorMatch = classList.match(/(bg-[a-z]+-\d+)/);
+                    const color = colorMatch ? colorMatch[1] : 'bg-slate-700';
+                    
+                    allGames.push({
+                        id: gameId,
+                        name: name,
+                        emoji: emoji,
+                        color: color
+                    });
+                } catch (e) {
+                    console.warn('Failed to parse game button:', e);
+                }
+            });
+            
+            // Ensure we have games
+            if (allGames.length === 0) {
+                console.error('No valid games found in DOM!');
+                return;
+            }
+            
+            console.log('✅ Discovered games:', allGames.length, allGames.map(g => g.id));
+            
+            // Fisher-Yates shuffle for true randomness
+            function shuffleArray(array) {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
+            
+            // Pick the winner FIRST
+            const winner = allGames[Math.floor(Math.random() * allGames.length)];
+            console.log('🎯 Winner selected:', winner.id, winner.name);
+            
+            // Shuffle and pick 9 UNIQUE games for the grid
+            const shuffled = shuffleArray(allGames);
+            let gridGames = [];
+            
+            // Add winner first
+            gridGames.push(winner);
+            
+            // Add 8 more unique games (different from winner)
+            for (let i = 0; i < shuffled.length && gridGames.length < 9; i++) {
+                if (shuffled[i].id !== winner.id) {
+                    gridGames.push(shuffled[i]);
+                }
+            }
+            
+            // Final shuffle of the grid so winner isn't always first
+            gridGames = shuffleArray(gridGames);
+            
+            console.log('📋 Grid games:', gridGames.map(g => g.id));
+            
+            // Create lightweight overlay (solid background, no blur)
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(255, 255, 255, 0.95);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.3s ease-out;
+            `;
+            
+            // Create container
+            const container = document.createElement('div');
+            container.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 24px;
+                padding: 24px;
+            `;
+            
+            // Add title
+            const title = document.createElement('div');
+            title.style.cssText = `
+                font-size: 28px;
+                font-weight: 900;
+                color: #1e293b;
+                text-align: center;
+            `;
+            title.textContent = '🎲 فاجئني 🎲';
+            container.appendChild(title);
+            
+            // Create 3x3 grid
+            const grid = document.createElement('div');
+            grid.style.cssText = `
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                width: 320px;
+            `;
+            
+            // Create game cards with lightweight styling
+            gridGames.forEach((game, index) => {
+                const card = document.createElement('div');
+                card.className = `roulette-card ${game.color}`;
+                card.style.cssText = `
+                    width: 100px;
+                    height: 100px;
+                    border-radius: 16px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    border: 4px solid transparent;
+                    transition: border-color 0.15s ease;
+                `;
+                card.dataset.index = index;
+                card.innerHTML = `
+                    <div style="font-size: 40px; margin-bottom: 4px;">${game.emoji}</div>
+                    <div style="font-size: 12px; font-weight: bold; text-align: center; padding: 0 8px; line-height: 1.2;">${game.name}</div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            container.appendChild(grid);
+            
+            // Result text (hidden initially)
+            const resultText = document.createElement('div');
+            resultText.style.cssText = `
+                font-size: 22px;
+                font-weight: bold;
+                color: #1e293b;
+                text-align: center;
+                min-height: 32px;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+            container.appendChild(resultText);
+            
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+            
+            // Trigger fade-in
+            requestAnimationFrame(() => {
+                overlay.style.opacity = '1';
+            });
+            
+            // Roulette animation logic (optimized)
+            let currentIndex = -1;
+            let iterations = 0;
+            const totalIterations = 20; // Reduced for better performance
+            const startDelay = 100; // Start at 100ms (not faster)
+            const maxDelay = 300; // End at 300ms
+            
+            const cards = grid.querySelectorAll('.roulette-card');
+            const winnerIndex = gridGames.findIndex(g => g.id === winner.id);
+            
+            function setActiveCard(index) {
+                // Remove active state from all cards (lightweight operation)
+                cards.forEach(card => {
+                    card.style.borderColor = 'transparent';
+                    card.style.backgroundColor = '';
+                });
+                
+                // Add active state to current card (simple border change only)
+                if (index >= 0) {
+                    const card = cards[index];
+                    card.style.borderColor = '#fcd34d'; // Yellow border
+                    card.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                    
+                    // Play tick sound (only if not near end)
+                    if (iterations < totalIterations - 3) {
+                        playTone(700, 'sine', 0.03);
+                    }
+                }
+            }
+            
+            function animate() {
+                iterations++;
+                
+                // Calculate delay with linear slowdown (simpler math)
+                const progress = iterations / totalIterations;
+                const delay = startDelay + (maxDelay - startDelay) * progress;
+                
+                // Decide next index
+                if (iterations < totalIterations - 3) {
+                    // Random jump
+                    currentIndex = Math.floor(Math.random() * 9);
+                } else if (iterations < totalIterations) {
+                    // Last few jumps, hover near winner
+                    const neighbors = [
+                        winnerIndex,
+                        (winnerIndex + 1) % 9,
+                        (winnerIndex - 1 + 9) % 9
+                    ];
+                    currentIndex = neighbors[Math.floor(Math.random() * neighbors.length)];
+                } else {
+                    // Final stop on winner
+                    currentIndex = winnerIndex;
+                    stopAnimation();
+                    return;
+                }
+                
+                setActiveCard(currentIndex);
+                setTimeout(animate, delay);
+            }
+            
+            function stopAnimation() {
+                // Final highlight on winner
+                setActiveCard(winnerIndex);
+                
+                // Winner effects (lightweight)
+                setTimeout(() => {
+                    const winnerCard = cards[winnerIndex];
+                    
+                    // Simple flash effect (toggle border thickness)
+                    let flashCount = 0;
+                    const flashInterval = setInterval(() => {
+                        if (flashCount % 2 === 0) {
+                            winnerCard.style.borderWidth = '6px';
+                            winnerCard.style.borderColor = '#fbbf24';
+                        } else {
+                            winnerCard.style.borderWidth = '4px';
+                            winnerCard.style.borderColor = '#fcd34d';
+                        }
+                        flashCount++;
+                        if (flashCount >= 6) {
+                            clearInterval(flashInterval);
+                            winnerCard.style.borderWidth = '6px';
+                            winnerCard.style.borderColor = '#fbbf24';
+                        }
+                    }, 150);
+                    
+                    // Play success sound
+                    playSound('correct');
+                    
+                    // Show confetti
+                    createConfetti();
+                    
+                    // Show result text
+                    resultText.textContent = winner.name;
+                    resultText.style.opacity = '1';
+                    
+                    // Navigate after delay
+                    setTimeout(() => {
+                        overlay.style.opacity = '0';
+                        setTimeout(() => {
+                            document.body.removeChild(overlay);
+                            
+                            // ROBUST NAVIGATION: Verify winner ID before navigating
+                            console.log('🚀 Navigating to winner:', winner.id, '(' + winner.name + ')');
+                            
+                            // Double-check the ID is valid
+                            if (!winner.id || !winner.id.includes('_setup')) {
+                                console.error('❌ Invalid winner ID:', winner.id);
+                                navigate('home');
+                                return;
+                            }
+                            
+                            // Navigate using the exact ID extracted from DOM
+                            navigate(winner.id);
+                        }, 300);
+                    }, 1000);
+                }, 100);
+            }
+            
+            // Start animation after brief delay
+            setTimeout(() => {
+                animate();
+            }, 400);
+        }
+
+        // Create floating +1 animation
+        function createFloatingPoint(x, y, points) {
+            const el = document.createElement('div');
+            el.className = 'floating-point';
+            el.textContent = `+${points}`;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            document.body.appendChild(el);
+            
+            // Remove after animation
+            setTimeout(() => el.remove(), 1500);
+        }
+
+        // Create confetti burst
+        function createConfetti() {
+            const colors = ['#f43f5e', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
+            const confettiCount = 30;
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const el = document.createElement('div');
+                el.className = 'confetti-particle';
+                el.style.left = `${Math.random() * 100}%`;
+                el.style.top = '-10px';
+                el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                el.style.animationDelay = `${Math.random() * 0.5}s`;
+                el.style.animationDuration = `${1.5 + Math.random()}s`;
+                document.body.appendChild(el);
+                
+                // Remove after animation
+                setTimeout(() => el.remove(), 3000);
+            }
+        }
+
+        function updateScore(id, isTeam, points = 1) {
+            // 1. Update Player Score
+            const playerIndex = state.players.findIndex(p => p.id === id);
+            if (playerIndex !== -1) {
+                state.players[playerIndex].score += points;
+                
+                // Visual feedback: Floating point animation
+                const x = window.innerWidth / 2;
+                const y = window.innerHeight / 2;
+                createFloatingPoint(x, y, points);
+                
+                // Confetti for first point or milestone (every 5 points)
+                if (state.players[playerIndex].score % 5 === 0) {
+                    createConfetti();
+                }
+            }
+
+            // 2. Sync with Team (If Mode is Active)
+            if (state.teamMode) {
+                // Find which team contains this player
+                const teamA = state.teams[0];
+                const teamB = state.teams[1];
+                
+                const inTeamA = teamA.members.some(m => m.id === id);
+                const inTeamB = teamB.members.some(m => m.id === id);
+
+                if (inTeamA) {
+                    teamA.score += points;
+                    // Team milestone animations
+                    if (teamA.score % 5 === 0) {
+                        createConfetti();
+                    }
+                } else if (inTeamB) {
+                    teamB.score += points;
+                    // Team milestone animations
+                    if (teamB.score % 5 === 0) {
+                        createConfetti();
+                    }
+                }
+            }
+
+            playSound('success');
+            saveState();
+            render(); // Update UI to show new scores
+        }
+        function showDare() {
+            const dare = getUniqueItem('dares', DARES_LIST);
+            playSound('fail');
+            const modal = `<div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in"><div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center border-4 border-red-500"><h2 class="text-2xl font-black text-red-600 mb-2">عقــــاب!</h2><p class="text-xl font-bold text-slate-800 mb-6">"${dare}"</p><button onclick="this.closest('.fixed').remove()" class="w-full py-3 bg-slate-800 text-white rounded-xl font-bold">نفذت خلاص</button></div></div>`;
+            document.body.insertAdjacentHTML('beforeend', modal);
+        }
+        function getTimer(time) {
+            if (time >= 60) { const mins = Math.floor(time / 60); const secs = time % 60; return `${mins}:${secs < 10 ? '0' : ''}${secs}`; }
+            return time;
+        }
+        function header(title, backTo) {
+            let teamBadge = '';
+            if (state.teamMode && state.currentGame && state.currentGame.player) {
+                const playerId = state.currentGame.player.id;
+                const currentTeam = state.teams.find(t => t.members.some(m => m.id === playerId));
+                if (currentTeam) {
+                    const isTeamA = currentTeam.id === 'A';
+                    const bgClass = isTeamA ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-indigo-50 border-indigo-200 text-indigo-700';
+                    teamBadge = `<div class="px-3 py-1.5 rounded-lg border ${bgClass} flex items-center gap-2 shadow-sm animate-in"><span class="text-xs font-black">دور ${currentTeam.name}</span></div>`;
+                }
+            }
+            return `<div class="flex flex-col gap-2 py-3 mb-2 border-b border-slate-100/80"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><button onclick="navigate('${backTo}')" class="p-2.5 bg-slate-50 rounded-xl hover:bg-slate-100 text-slate-600 transition active:scale-95"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button><h1 class="text-xl font-black text-slate-800 tracking-tight">${title}</h1></div>${teamBadge}</div></div>`;
+        }
+
+        // --- Fair Turn Logic (Strict Queue System) ---
+        function getFairPlayer() {
+            // Safety check
+            if (!state.players || state.players.length === 0) return { id: 0, name: 'لاعب' };
+
+            // If queue is empty or invalid, create a new shuffled deck of players
+            if (!state.turnQueue || state.turnQueue.length === 0) {
+                // Create a shallow copy of players
+                let newQueue = [...state.players];
+                // Fisher-Yates Shuffle
+                for (let i = newQueue.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newQueue[i], newQueue[j]] = [newQueue[j], newQueue[i]];
+                }
+                state.turnQueue = newQueue;
+            }
+
+            // Pop the next player
+            return state.turnQueue.pop();
+        }
+
+        // --- No-Repeat Content System (Deck Logic) ---
+        function getUniqueItem(categoryKey, sourceArray) {
+            if (!state.usedItems) state.usedItems = {};
+            if (!state.usedItems[categoryKey]) state.usedItems[categoryKey] = [];
+
+            // Filter available items
+            // If items are objects, we use a unique property (like 'word' or 'id'), otherwise use the item itself
+            const used = state.usedItems[categoryKey];
+            
+            // Helper to get ID/String for comparison
+            const getId = (item) => (typeof item === 'object' ? (item.word || item.text || item.quote || JSON.stringify(item)) : item);
+
+            const available = sourceArray.filter(item => !used.includes(getId(item)));
+
+            if (available.length === 0) {
+                // Deck exhausted! Reset.
+                state.usedItems[categoryKey] = [];
+                // Recursive call to pick from fresh deck
+                return getUniqueItem(categoryKey, sourceArray);
+            }
+
+            // Pick random from available
+            const picked = available[Math.floor(Math.random() * available.length)];
+            
+            // Mark as used
+            state.usedItems[categoryKey].push(getId(picked));
+            
+            return picked;
+        }
+
+        // --- NEW: Unified Game Start Screen ---
+        function renderGameStartScreen(title, description, emoji, buttonText, startAction, colorClass) {
+            return `
+                <div class="p-6 h-screen flex flex-col ${colorClass} bg-opacity-10">
+                    ${header(title, 'home')}
+                    <div class="flex-1 flex flex-col justify-center items-center text-center">
+                        <div class="text-6xl mb-6">${emoji}</div>
+                        <h2 class="text-2xl font-bold text-slate-800 mb-4">${title}</h2>
+                        <p class="text-slate-600 max-w-sm mb-8 font-medium leading-relaxed">${description}</p>
+                        <button onclick="${startAction}" class="w-full py-4 ${colorClass.replace('bg-opacity-10', '')} text-white rounded-xl font-bold text-xl shadow-lg transition transform active:scale-95 hover:brightness-110">
+                            ${buttonText}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ===== RENDER =====
+        function render() {
+            const container = document.getElementById('screen-container');
+            
+            // Render the appropriate screen
+            if (state.screen === 'home') container.innerHTML = renderHome();
+            else if (state.screen === 'players') container.innerHTML = renderPlayers();
+            else if (state.screen === 'scores') container.innerHTML = renderScores();
+            else if (state.screen === 'teams_setup') container.innerHTML = renderTeamsSetup();
+            // Games Setup
+            else if (state.screen === 'lawyer_setup') container.innerHTML = renderLawyerSetup();
+            else if (state.screen === 'indian_setup') container.innerHTML = renderIndianSetup();
+            else if (state.screen === 'bomb_setup') container.innerHTML = renderBombSetup();
+            else if (state.screen === 'taboo_setup') container.innerHTML = renderTabooSetup();
+            else if (state.screen === 'story_setup') container.innerHTML = renderStorySetup();
+            else if (state.screen === 'morph_setup') container.innerHTML = renderMorphSetup();
+            else if (state.screen === 'artist_setup') container.innerHTML = renderArtistSetup();
+            else if (state.screen === 'whisper_setup') container.innerHTML = renderWhisperSetup();
+            else if (state.screen === 'never_setup') container.innerHTML = renderNeverSetup();
+            else if (state.screen === 'debate_setup') container.innerHTML = renderDebateSetup();
+            else if (state.screen === 'heads_up_setup') container.innerHTML = renderHeadsUpSetup();
+            else if (state.screen === 'emoji_setup') container.innerHTML = renderEmojiSetup();
+            else if (state.screen === 'lyrics_setup') container.innerHTML = renderLyricsSetup();
+            else if (state.screen === 'unscramble_setup') container.innerHTML = renderUnscrambleSetup();
+            else if (state.screen === 'spy_setup') container.innerHTML = renderSpySetup();
+            else if (state.screen === 'charades_setup') container.innerHTML = renderCharadesSetup();
+            else if (state.screen === 'quotes_setup') container.innerHTML = renderQuotesSetup();
+            else if (state.screen === 'five_second_setup') container.innerHTML = renderFiveSecondSetup();
+            else if (state.screen === 'bus_setup') container.innerHTML = renderBusSetup();
+            else if (state.screen === 'liar_setup') container.innerHTML = renderLiarSetup();
+            else if (state.screen === 'auction_setup') container.innerHTML = renderAuctionSetup();
+            else if (state.screen === 'gibberish_setup') container.innerHTML = renderGibberishSetup();
+            else if (state.screen === 'hum_setup') container.innerHTML = renderHumSetup();
+            else if (state.screen === 'likely_setup') container.innerHTML = renderLikelySetup();
+            
+            // Force animation replay on every render
+            container.classList.remove('animate-enter');
+            void container.offsetWidth; // Trigger reflow (magic!)
+            container.classList.add('animate-enter');
+        }
+
+        function renderHome() {
+            return `
+                <div class="flex flex-col h-screen p-4">
+                    <div class="text-center pt-8 pb-4"><h1 class="text-4xl font-black text-slate-800 mb-1">لعبة القعدة</h1><p class="text-slate-500 font-medium">اللمة متحلاش غير بيها</p></div>
+                    
+                    <!-- Surprise Me Button -->
+                    <button onclick="surpriseMe()" class="w-full py-4 mb-4 surprise-gradient text-white rounded-2xl font-black text-xl shadow-xl transition transform active:scale-95 hover:scale-[1.02] flex items-center justify-center gap-3">
+                        <span class="text-3xl">🎲</span>
+                        <span>فاجئني! (لعبة عشوائية)</span>
+                    </button>
+                    
+                    <div class="w-full grid grid-cols-2 gap-3 flex-1 overflow-y-auto pb-2 content-start min-h-0">
+                        <!-- SET 3 -->
+                        ${menuButton('lawyer_setup', '👨‍⚖️', 'المحامي اللعين', 'دافع عن المصيبة', 'bg-slate-700')}
+                        ${menuButton('indian_setup', '🎬', 'سيناريو هندي', 'تمثيل وأوفرة', 'bg-orange-600')}
+                        ${menuButton('bomb_setup', '💣', 'القنبلة', 'باصي بسرعة', 'bg-red-700')}
+                        ${menuButton('taboo_setup', '🚫', 'أوعى تقولها', 'ممنوعات كتير', 'bg-rose-900')}
+                        <!-- SET 2 -->
+                        ${menuButton('story_setup', '📖', 'حكاية في كلمتين', 'ألفوا قصة', 'bg-amber-600')}
+                        ${menuButton('artist_setup', '🎨', 'الرسام الأعمى', 'ارسم وخمن', 'bg-fuchsia-600')}
+                        ${menuButton('morph_setup', '🔤', 'الكلمة المتحولة', 'غير حرف', 'bg-cyan-700')}
+                        <!-- SET 1 -->
+                        ${menuButton('whisper_setup', '🎧', 'إقرأ شفايفي', 'علي الصوت', 'bg-pink-500')}
+                        ${menuButton('debate_setup', '⚖️', 'محكمة', 'إقناع وجدال', 'bg-amber-700')}
+                        ${menuButton('never_setup', '✋', 'أنا عمري ما', 'مين عمل؟', 'bg-rose-800')}
+                        <!-- CLASSICS -->
+                        ${menuButton('heads_up_setup', '🤯', 'على راسي', 'حط موبايلك', 'bg-blue-600')}
+                        ${menuButton('emoji_setup', '🧩', 'فك الإيموجي', 'اسم الفيلم؟', 'bg-yellow-500')}
+                        ${menuButton('lyrics_setup', '🎤', 'كمل الأغنية', 'حافظ؟', 'bg-purple-500')}
+                        ${menuButton('unscramble_setup', '🔀', 'رتبها صح', 'كلمة متلخبطة', 'bg-green-600')}
+                        ${menuButton('five_second_setup', '⏱️', 'خمسة عليك', '3 حاجات', 'bg-teal-600')}
+                        ${menuButton('spy_setup', '🕵️', 'الجاسوس', 'مين الغريب؟', 'bg-indigo-600')}
+                        ${menuButton('charades_setup', '🎭', 'بدون كلام', 'تمثيل', 'bg-rose-600')}
+                        ${menuButton('quotes_setup', '🎬', 'الافيهات', 'سمّع', 'bg-emerald-600')}
+                        ${menuButton('bus_setup', '🚌', 'أوتوبيس', 'حرف وفئة', 'bg-purple-600')}
+                        ${menuButton('liar_setup', '🃏', 'الكداب', 'امسك الكذبة', 'bg-orange-600')}
+                        ${menuButton('auction_setup', '🔨', 'المزاد', 'مين يزود', 'bg-cyan-600')}
+                        ${menuButton('gibberish_setup', '🗣️', 'فك الشفرة', 'كلام غريب', 'bg-pink-600')}
+                        ${menuButton('hum_setup', '🎵', 'طربني', 'همهمة', 'bg-yellow-600')}
+                        ${menuButton('likely_setup', '👉', 'مين الكارثة', 'توقعات', 'bg-red-600')}
+                    </div>
+                    
+                    <!-- Footer Buttons (Icons Fixed) -->
+                    <div class="flex gap-3 w-full mt-2">
+                        <button onclick="navigate('players')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            اللاعبين
+                        </button>
+                        <button onclick="navigate('scores')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+                            النتائج
+                        </button>
+                    </div>
+                </div>`;
+        }
+
+        function menuButton(screen, emoji, title, subtitle, color) { return `<button onclick="navigate('${screen}')" class="w-full aspect-square p-3 rounded-2xl shadow-lg text-white flex flex-col items-center justify-center text-center transition transform active:scale-95 hover:scale-[1.02] ${color}"><div class="text-5xl mb-2">${emoji}</div><div><span class="text-lg font-bold block leading-tight">${title}</span><span class="text-xs opacity-90 block mt-1 leading-tight">${subtitle}</span></div></button>`; }
+        function renderPlayers() {
+            const teamActive = state.teamMode;
+            return `
+                <div class="p-6 h-screen flex flex-col">
+                    ${header('اللاعبين', 'home')}
+                    
+                    <!-- Team Setup Row (طبقاً للتصميم الجديد) -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-2xl px-3 py-2">
+                            <button onclick="navigate('teams_setup')" class="px-3 py-1 bg-white rounded-xl font-bold text-xs text-slate-800 shadow-sm border border-slate-200">
+                                إعداد الفرق
+                            </button>
+                            <button onclick="${teamActive ? 'deactivateTeamMode()' : 'activateTeamMode()'}" class="flex items-center gap-1 text-sm font-bold ${teamActive ? 'text-emerald-600' : 'text-slate-600'}">
+                                <span class="inline-flex items-center justify-center w-6 h-6 rounded-full ${teamActive ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}">
+                                    ${teamActive ? '✓' : '✕'}
+                                </span>
+                                <span>فرق</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Player Input Section -->
+                    <form onsubmit="addPlayer(event)" class="flex items-stretch gap-3 mb-6 h-14">
+                        <button type="submit" class="bg-amber-500 text-white h-full w-14 rounded-2xl font-bold flex items-center justify-center shadow-lg hover:bg-amber-600 active:scale-95 transition">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </button>
+                        <input type="text" id="newPlayerName" placeholder="اكتب اسم اللاعب..." class="flex-1 h-full px-5 border-2 border-slate-200 rounded-2xl text-lg font-bold focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 transition">
+                    </form>
+                    
+                    <!-- Players List -->
+                    <div class="flex-1 overflow-y-auto space-y-3">
+                        ${state.players.map(p => `
+                            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                                <span class="font-bold text-lg text-slate-700">${p.name}</span>
+                                <button onclick="removePlayer(${p.id})" class="text-red-400 hover:text-red-600 transition">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <!-- Clear All / New Game Button -->
+                    ${state.players.length > 0 ? `
+                        <div class="mt-4 pt-4 border-t-2 border-slate-100">
+                            <button onclick="clearAllPlayers()" class="w-full py-4 bg-red-500 hover:bg-red-600 active:scale-95 text-white rounded-2xl font-bold text-lg shadow-lg transition flex items-center justify-center gap-2">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                <span>مسح الكل / لعبة جديدة</span>
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        function renderTeamsSetup() {
+            const teamA = state.teams[0];
+            const teamB = state.teams[1];
+            return `
+                <div class="flex flex-col h-screen bg-slate-50">
+                    ${header('إعداد الفرق', 'players')}
+                    <div class="flex-1 overflow-y-auto p-4 pb-32">
+                        <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 mb-6">
+                            <div class="flex items-center gap-2 mb-4 justify-center opacity-50"><span class="text-xs font-bold">تسمية الفرق</span></div>
+                            <div class="flex gap-4">
+                                <div class="flex-1"><input type="text" value="${teamA.name}" onchange="updateTeamName('A', this.value)" class="w-full p-4 text-center font-black text-lg border-b-4 border-rose-500 rounded-2xl bg-rose-50/50 text-rose-700 focus:outline-none focus:bg-white focus:shadow-lg transition placeholder-rose-300" placeholder="فريق أ"></div>
+                                <div class="flex-1"><input type="text" value="${teamB.name}" onchange="updateTeamName('B', this.value)" class="w-full p-4 text-center font-black text-lg border-b-4 border-indigo-500 rounded-2xl bg-indigo-50/50 text-indigo-700 focus:outline-none focus:bg-white focus:shadow-lg transition placeholder-indigo-300" placeholder="فريق ب"></div>
+                            </div>
+                        </div>
+                        <h3 class="px-2 text-slate-400 text-xs font-bold mb-3">اضغط لتوزيع اللاعبين</h3>
+                        <div class="space-y-3">
+                            ${state.players.map(p => {
+                                const inA = teamA.members.some(m => m.id === p.id);
+                                const inB = teamB.members.some(m => m.id === p.id);
+                                return `<div class="flex items-center justify-between bg-white p-3 pr-5 rounded-2xl shadow-sm border border-slate-100 transition hover:shadow-md"><span class="font-bold text-lg text-slate-700">${p.name}</span><div class="flex gap-3"><button onclick="assignPlayerToTeam('A', ${p.id})" class="w-12 h-12 rounded-xl font-black text-lg transition-all duration-200 flex items-center justify-center ${inA ? 'bg-rose-600 text-white shadow-lg shadow-rose-200 transform scale-110 ring-2 ring-offset-2 ring-rose-100' : 'bg-slate-50 text-slate-300 hover:bg-rose-50 hover:text-rose-400'}">أ</button><button onclick="assignPlayerToTeam('B', ${p.id})" class="w-12 h-12 rounded-xl font-black text-lg transition-all duration-200 flex items-center justify-center ${inB ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 transform scale-110 ring-2 ring-offset-2 ring-indigo-100' : 'bg-slate-50 text-slate-300 hover:bg-indigo-50 hover:text-indigo-400'}">ب</button></div></div>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                    <div class="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-white via-white/95 to-transparent z-50">
+                        ${state.teamMode ? `<button onclick="deactivateTeamMode()" class="w-full py-4 bg-red-500 text-white rounded-2xl font-black text-xl shadow-xl shadow-red-200 hover:bg-red-600 active:scale-95 transition flex items-center justify-center gap-2"><span>إلغاء وضع الفرق</span></button>` : `<button onclick="activateTeamMode()" class="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black text-xl shadow-xl shadow-emerald-200 hover:bg-emerald-600 active:scale-95 transition flex items-center justify-center gap-2"><span>تفعيل اللعب بالفرق</span></button>`}
+                    </div>
+                </div>
+            `;
+        }
+        function shareResults() {
+            let shareText = '🔥 ملوك القعدة وصلوا.. وسع للنتايج!\n\n🏆 الترتيب الحالي:\n';
+            
+            if (state.teamMode) {
+                const sortedTeams = [...state.teams].sort((a, b) => b.score - a.score);
+                sortedTeams.forEach((t, i) => {
+                    const emoji = i === 0 ? '1️⃣' : i === 1 ? '2️⃣' : '3️⃣';
+                    shareText += `${emoji} ${t.name}: ${t.score} نقطة\n`;
+                });
+            } else {
+                const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+                sortedPlayers.slice(0, 5).forEach((p, i) => {
+                    const emoji = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'][i];
+                    shareText += `${emoji} ${p.name}: ${p.score} نقطة\n`;
+                });
+            }
+            
+            shareText += '\n🎲 العبها معانا دلوقتي: [رابط التطبيق]';
+            
+            // Try Web Share API first (mobile)
+            if (navigator.share) {
+                navigator.share({
+                    title: 'لعبة القعدة - النتائج',
+                    text: shareText
+                }).catch(() => {
+                    // If share cancelled or failed, fallback to clipboard
+                    copyToClipboard(shareText);
+                });
+            } else {
+                // Fallback: Copy to clipboard
+                copyToClipboard(shareText);
+            }
+        }
+        
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('✅ تم النسخ! الصقها في أي محادثة');
+                    playSound('success');
+                });
+            } else {
+                // Older fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ تم النسخ! الصقها في أي محادثة');
+                playSound('success');
+            }
+        }
+        
+        function renderScores() {
+            if (state.teamMode) {
+                const sortedTeams = [...state.teams].sort((a, b) => b.score - a.score);
+                return `
+                    <div class="p-6 h-screen flex flex-col">
+                        ${header('لوحة الشرف - الفرق', 'home')}
+                        
+                        <!-- Share Button -->
+                        <button onclick="shareResults()" class="w-full py-3 mb-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                            <span>شارك النتائج</span>
+                        </button>
+                        
+                        <div class="flex-1 overflow-y-auto space-y-4">
+                            ${sortedTeams.map((t, i) => `
+                                <div class="flex items-center p-4 rounded-xl shadow-sm border border-slate-100 bg-white">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ml-4 ${i === 0 ? 'bg-yellow-400 text-white' : 'bg-slate-200 text-slate-600'}">${i + 1}</div>
+                                    <div class="flex-1">
+                                        <div class="font-bold text-lg text-slate-800">${t.name}</div>
+                                        <div class="text-sm text-slate-500 mt-1">${(t.members && t.members.length > 0) ? t.members.map(m => m.name).join(', ') : 'لا يوجد أعضاء'}</div>
+                                    </div>
+                                    <div class="font-black text-2xl ${t.id === 'A' ? 'text-rose-600' : 'text-indigo-600'}">${t.score}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button onclick="resetScores()" class="mt-4 w-full py-4 bg-slate-800 text-white rounded-xl font-bold">تصفير العداد</button>
+                    </div>
+                `;
+            } else {
+                const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+                return `
+                    <div class="p-6 h-screen flex flex-col">
+                        ${header('لوحة الشرف', 'home')}
+                        
+                        <!-- Share Button -->
+                        <button onclick="shareResults()" class="w-full py-3 mb-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                            <span>شارك النتائج</span>
+                        </button>
+                        
+                        <div class="flex-1 overflow-y-auto space-y-4">
+                            ${sortedPlayers.map((p, i) => `
+                                <div class="flex items-center p-4 rounded-xl shadow-sm border border-slate-100 bg-white">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ml-4 ${i === 0 ? 'bg-yellow-400 text-white' : 'bg-slate-200 text-slate-600'}">${i + 1}</div>
+                                    <div class="flex-1 font-bold text-lg text-slate-800">${p.name}</div>
+                                    <div class="font-black text-2xl text-indigo-600">${p.score}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button onclick="resetScores()" class="mt-4 w-full py-4 bg-red-600 text-white rounded-xl font-bold border-2 border-red-700 hover:bg-red-700 transition">⚠️ تصفير العداد</button>
+                    </div>
+                `;
+            }
+        }
+        function addPlayer(e) { e.preventDefault(); const input = document.getElementById('newPlayerName'); if(input.value.trim()){ state.players.push({id: Date.now(), name: input.value.trim(), score: 0}); saveState(); render(); } }
+        function removePlayer(id) {
+            // Confirmation dialog before deletion
+            if (!confirm('هل أنت متأكد من حذف هذا اللاعب؟')) {
+                return; // User cancelled
+            }
+            
+            // Remove from players list
+            state.players = state.players.filter(p => p.id !== id);
+            
+            // Remove from all teams
+            state.teams.forEach(team => {
+                team.members = team.members.filter(m => m.id !== id);
+            });
+            
+            // ⚠️ CRITICAL: Save state to persist the deletion
+            saveState();
+            render();
+        }
+        function clearAllPlayers() {
+            // Confirm before clearing
+            if (state.players.length > 0 && !confirm('هل أنت متأكد من مسح جميع اللاعبين وبدء لعبة جديدة؟\n\nسيتم حذف:\n• جميع اللاعبين\n• جميع النقاط\n• إعدادات الفرق')) {
+                return;
+            }
+            // Clear players array
+            state.players = [];
+            // Clear turn queue
+            state.turnQueue = [];
+            // Reset teams
+            state.teams.forEach(team => {
+                team.members = [];
+                team.score = 0;
+            });
+            // Clear used items
+            state.usedItems = {};
+            // Clear current game
+            state.currentGame = null;
+            // Clear gameInterval if running
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+            // Update localStorage
+            saveState();
+            // Play sound feedback
+            playSound('click');
+            // Update UI
+            render();
+        }
+        function resetScores() { 
+            // Confirmation dialog for safety
+            if (!confirm('هل أنت متأكد من تصفير العداد لجميع اللاعبين؟')) return;
+            
+            state.players = state.players.map(p => ({...p, score: 0}));
+            state.teams = state.teams.map(t => ({...t, score: 0}));
+            playSound('click');
+            saveState();
+            render(); 
+        }
+        function updateTeamName(teamId, newName) {
+            const team = state.teams.find(t => t.id === teamId);
+            if (team && newName.trim()) {
+                team.name = newName.trim();
+                playSound('click');
+                saveState();
+            }
+        }
+        function assignPlayerToTeam(teamId, playerId) {
+            // 1. Find the player object
+            const player = state.players.find(p => p.id === playerId);
+            if (!player) return;
+
+            // 2. Remove player from ALL teams first (to avoid duplicates)
+            state.teams.forEach(team => {
+                team.members = team.members.filter(m => m.id !== playerId);
+            });
+
+            // 3. Add to the new target team
+            const targetTeam = state.teams.find(t => t.id === teamId);
+            if (targetTeam) {
+                targetTeam.members.push(player);
+            }
+
+            // 4. Update the "teamId" property on the player object itself (for redundancy/safety)
+            player.teamId = teamId;
+
+            // 5. ⚠️ CRITICAL: Save and Render
+            playSound('click');
+            saveState(); // <--- This ensures the assignment persists on refresh
+            render();
+        }
+        function activateTeamMode() {
+            const teamA = state.teams[0];
+            const teamB = state.teams[1];
+            
+            if (teamA.members.length === 0 || teamB.members.length === 0) {
+                alert('يجب أن يكون لكل فريق لاعب واحد على الأقل!');
+                return;
+            }
+            
+            state.teamMode = true;
+            playSound('success');
+            saveState();
+            render();
+        }
+        function deactivateTeamMode() {
+            state.teamMode = false;
+            playSound('click');
+            render();
+        }
+
+        // ============================================
+        // =========== ALL GAME LOGIC =================
+        // ============================================
+
+        // --- LAWYER ---
+        function startLawyerGame() {
+            const data = getUniqueItem('lawyer', LAWYER_DATA);
+            const player = getFairPlayer();
+            state.currentGame = { type: 'lawyer', phase: 'prepare', data, player, revealed: false, timeLeft: 30 };
+            playSound('click');
+            saveState();
+            render();
+        }
+        function startLawyerRound() {
+            state.currentGame.phase = 'playing';
+            state.currentGame.revealed = true;
+            playSound('click');
+            saveState();
+            render();
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                state.currentGame.timeLeft--;
+                // DOM update for no flickering
+                const timerEl = document.getElementById('game-timer');
+                if (timerEl) timerEl.innerText = getTimer(state.currentGame.timeLeft);
+                
+                if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); state.currentGame.phase = 'result'; playSound('fail'); saveState(); render(); }
+                else if (state.currentGame.timeLeft <= 10) playSound('tick');
+            }, 1000);
+        }
+        function lawyerSuccess() { updateScore(state.currentGame.player.id, false, 1); startLawyerGame(); }
+        function renderLawyerSetup() {
+            if (!state.currentGame || state.currentGame.type !== 'lawyer') return renderGameStartScreen('المحامي اللعين', 'مصيبة هتحصلك، ولازم تبررها وتخرج منها وتستخدم 3 كلمات ملهمش علاقة بالموضوع عشان تقنع المحكمة!', '👨‍⚖️', 'ورطني!', 'startLawyerGame()', 'bg-slate-700');
+            const game = state.currentGame;
+            if (game.phase === 'prepare') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-slate-700 text-white text-center animate-in"><p class="text-xl opacity-80 mb-2">الدور على</p><h1 class="text-4xl font-black mb-8">${game.player.name}</h1><div class="bg-white/10 p-6 rounded-2xl border-2 border-white/20 w-full mb-8 relative overflow-hidden">${!game.revealed ? `<div onclick="state.currentGame.revealed = true; render()" class="absolute inset-0 bg-slate-800 z-10 flex items-center justify-center cursor-pointer hover:bg-slate-900 transition"><span class="text-xl font-bold animate-pulse">دوس عشان تشوف المصيبة</span></div>` : ''}<p class="text-sm mb-2 opacity-75">المصيبة:</p><h2 class="text-2xl font-bold text-yellow-300 leading-relaxed mb-4">${game.data.disaster}</h2><div class="border-t border-white/20 pt-4"><p class="text-sm mb-2 opacity-75">كلمات إجبارية:</p><div class="flex flex-wrap gap-2 justify-center">${game.data.words.map(w=>`<span class="bg-slate-600 px-3 py-1 rounded-lg">${w}</span>`).join('')}</div></div></div><button onclick="startLawyerRound()" class="w-full py-4 bg-white text-slate-800 rounded-xl font-bold text-xl" ${!game.revealed ? 'disabled opacity-50' : ''}>ابدأ المرافعة</button></div>`;
+            if (game.phase === 'playing') return `<div class="h-screen flex flex-col p-6 bg-white"><div class="text-center mt-4 mb-4"><p class="text-lg font-bold opacity-80">المتهم: <span class="text-slate-800">${game.player.name}</span></p></div><div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6 text-center"><h1 class="text-3xl font-black leading-relaxed text-center text-slate-800 mb-2">${game.data.disaster}</h1><div class="flex flex-wrap gap-2 justify-center mt-4">${game.data.words.map(w=>`<span class="bg-slate-200 px-2 py-1 rounded text-sm font-bold text-slate-700">${w}</span>`).join('')}</div></div><div class="flex-1 flex flex-col justify-center items-center"><div class="text-8xl font-black text-slate-800" id="game-timer">${getTimer(game.timeLeft)}</div></div><div class="space-y-3"><button onclick="lawyerSuccess()" class="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-xl shadow-lg">✓ براءة (أقنعنا)</button><button onclick="state.currentGame.phase='result'; render()" class="w-full py-3 bg-red-500 text-white rounded-xl font-bold">✗ إعدام (فشل)</button></div></div>`;
+            if (game.phase === 'result') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-slate-900 text-white text-center"><h2 class="text-3xl font-bold mb-4">رفعت الجلسة!</h2><button onclick="startLawyerGame()" class="w-full py-4 bg-slate-600 rounded-xl font-bold text-xl mb-3">قضية جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-800 rounded-xl font-bold">خروج</button></div>`;
+        }
+
+        // --- INDIAN ACTION ---
+        function startIndianGame() {
+            const data = getUniqueItem('indian', INDIAN_DATA);
+            const player = getFairPlayer();
+            state.currentGame = { type: 'indian', phase: 'prepare', data, player, revealed: false, timeLeft: 60 };
+            playSound('click');
+            saveState();
+            render();
+        }
+        function startIndianRound() {
+            state.currentGame.phase = 'playing';
+            state.currentGame.revealed = true;
+            playSound('click');
+            saveState();
+            render();
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                state.currentGame.timeLeft--;
+                const timerEl = document.getElementById('game-timer');
+                if (timerEl) timerEl.innerText = getTimer(state.currentGame.timeLeft);
+                
+                if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); state.currentGame.phase = 'result'; playSound('fail'); saveState(); render(); }
+                else if (state.currentGame.timeLeft <= 10) playSound('tick');
+            }, 1000);
+        }
+        function indianSuccess() { updateScore(state.currentGame.player.id, false, 1); startIndianGame(); }
+        function indianFail() { 
+            if (gameInterval) clearInterval(gameInterval);
+            state.currentGame.phase = 'result'; 
+            playSound('fail');
+            saveState();
+            render(); 
+        }
+        function renderIndianSetup() {
+            if (!state.currentGame || state.currentGame.type !== 'indian') return renderGameStartScreen('سيناريو هندي', 'مثل مشهد درامي مع شرط إخراج غريب! أوفر على قد ما تقدر!', '🎬', 'أكشن!', 'startIndianGame()', 'bg-orange-600');
+            const game = state.currentGame;
+            if (game.phase === 'prepare') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-orange-600 text-white text-center animate-in"><p class="text-xl opacity-80 mb-2">البطل اليوم</p><h1 class="text-4xl font-black mb-8">${game.player.name}</h1><div class="bg-white/10 p-6 rounded-2xl border-2 border-white/20 w-full mb-8 relative overflow-hidden">${!game.revealed ? `<div onclick="state.currentGame.revealed = true; render()" class="absolute inset-0 bg-orange-700 z-10 flex items-center justify-center cursor-pointer hover:bg-orange-800 transition"><span class="text-xl font-bold animate-pulse">🎬 دوس عشان تشوف السيناريو</span></div>` : ''}<p class="text-sm mb-2 opacity-75">المشهد:</p><h2 class="text-2xl font-bold text-yellow-300 leading-relaxed mb-4">${game.data.scene}</h2><div class="border-t border-white/20 pt-4"><p class="text-sm mb-2 opacity-75">شرط الإخراج:</p><div class="bg-orange-500 px-4 py-3 rounded-lg font-bold text-lg">${game.data.condition}</div></div></div><button onclick="startIndianRound()" class="w-full py-4 bg-white text-orange-600 rounded-xl font-bold text-xl" ${!game.revealed ? 'disabled opacity-50' : ''}>🎬 أكشن يا فنان!</button></div>`;
+            if (game.phase === 'playing') return `<div class="h-screen flex flex-col p-6 bg-white"><div class="text-center mt-4 mb-4"><p class="text-lg font-bold opacity-80">البطل: <span class="text-orange-600">${game.player.name}</span></p></div><div class="bg-orange-50 p-4 rounded-xl border-2 border-orange-200 mb-4 text-center"><p class="text-xs text-orange-600 font-bold mb-2 uppercase">المشهد</p><h1 class="text-2xl font-black leading-relaxed text-center text-orange-900 mb-4">${game.data.scene}</h1><div class="border-t-2 border-orange-200 pt-3"><p class="text-xs text-orange-600 font-bold mb-2 uppercase">شرط الإخراج</p><div class="bg-orange-600 text-white px-4 py-2 rounded-lg font-bold text-base">${game.data.condition}</div></div></div><div class="flex-1 flex flex-col justify-center items-center"><div class="text-8xl font-black text-orange-600" id="game-timer">${getTimer(game.timeLeft)}</div></div><div class="space-y-3"><button onclick="indianSuccess()" class="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-xl shadow-lg">🏆 جابها! (أوسكار)</button><button onclick="indianFail()" class="w-full py-3 bg-red-500 text-white rounded-xl font-bold">😅 أوفر أوي (فشل)</button></div></div>`;
+            if (game.phase === 'result') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-orange-900 text-white text-center"><h2 class="text-3xl font-bold mb-4">🎬 انتهى التصوير!</h2><button onclick="startIndianGame()" class="w-full py-4 bg-orange-600 rounded-xl font-bold text-xl mb-3">مشهد جديد</button><button onclick="goHome()" class="w-full py-3 bg-orange-800 rounded-xl font-bold">خروج</button></div>`;
+        }
+
+        // --- BOMB ---
+        function startBombGame() {
+            const category = BOMB_DATA[Math.floor(Math.random() * BOMB_DATA.length)];
+            const count = Math.floor(Math.random() * 3) + 3; // عدد عشوائي من 3 لـ 5
+            const time = Math.floor(Math.random() * (60 - 10 + 1) + 10);
+            const player = getFairPlayer();
+            state.currentGame = { type: 'bomb', phase: 'playing', category, count, player, timeLeft: time, exploded: false };
+            playSound('click');
+            render();
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                state.currentGame.timeLeft--;
+                playSound('bomb_tick');
+                if (state.currentGame.timeLeft <= 0) {
+                    clearInterval(gameInterval);
+                    state.currentGame.exploded = true;
+                    state.currentGame.phase = 'result';
+                    // Deduct point from current player
+                    updateScore(state.currentGame.player.id, false, -1);
+                    playSound('explode');
+                    saveState();
+                    render();
+                }
+            }, 1000);
+        }
+        function passBomb() { 
+            if(state.currentGame && state.currentGame.phase === 'playing') {
+                // Stop current timer
+                if (gameInterval) clearInterval(gameInterval);
+                
+                // Change category and player
+                const newCategory = BOMB_DATA[Math.floor(Math.random() * BOMB_DATA.length)];
+                const newCount = Math.floor(Math.random() * 3) + 3; // عدد عشوائي من 3 لـ 5
+                const newPlayer = getFairPlayer();
+                const newTime = Math.floor(Math.random() * (60 - 10 + 1) + 10);
+                
+                state.currentGame.category = newCategory;
+                state.currentGame.count = newCount;
+                state.currentGame.player = newPlayer;
+                state.currentGame.timeLeft = newTime;
+                
+                playSound('click');
+                render();
+                
+                // Start new timer
+                gameInterval = setInterval(() => {
+                    state.currentGame.timeLeft--;
+                    playSound('bomb_tick');
+                    if (state.currentGame.timeLeft <= 0) {
+                        clearInterval(gameInterval);
+                        state.currentGame.exploded = true;
+                        state.currentGame.phase = 'result';
+                        updateScore(state.currentGame.player.id, false, -1);
+                        playSound('explode');
+                        saveState();
+                        render();
+                    }
+                }, 1000);
+            }
+        }
+        function renderBombSetup() {
+            if (!state.currentGame || state.currentGame.type !== 'bomb') return renderGameStartScreen('القنبلة', 'سؤال هيظهر، جاوب وباصي الموبايل بسرعة للي جنبك. القنبلة هتفرقع في وقت عشوائي، اللي في إيده بيخسر!', '💣', 'شغل الفتيل', 'startBombGame()', 'bg-red-700');
+            const game = state.currentGame;
+            if (game.phase === 'playing') return `<div class="h-screen flex flex-col p-6 bg-red-600 text-white animate-in"><div class="text-center mt-4 mb-4"><p class="text-slate-200 mb-1">الدور على:</p><h2 class="text-2xl font-bold">${game.player.name}</h2></div><div class="text-center mt-4"><p class="text-white/80 font-bold mb-4">الفئة المطلوبة:</p><h1 class="text-4xl font-black mb-12">${game.count} ${game.category}</h1></div><div class="flex-1 flex items-center justify-center"><div class="text-9xl mb-8 bomb-pulse">💣</div></div><p class="text-center mb-8 font-bold text-lg">جاوب وباصي بسرعة!</p><button onclick="passBomb()" class="w-full py-6 bg-white text-red-700 rounded-2xl font-black text-2xl shadow-xl active:scale-95 transition">باصي القنبلة! 💨</button></div>`;
+            if (game.phase === 'result') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-black text-white text-center animate-in"><div class="text-9xl mb-6">💥</div><h2 class="text-4xl font-black text-red-500 mb-4">بووووم!</h2><p class="text-xl mb-2">اللاعب: <span class="font-bold text-yellow-300">${game.player.name}</span></p><p class="text-lg mb-8 opacity-80">تم خصم نقطة (-1)</p><button onclick="startBombGame()" class="w-full py-4 bg-red-700 rounded-xl font-bold text-xl mb-3">جولة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-800 rounded-xl font-bold">خروج</button></div>`;
+        }
+
+        // --- TABOO ---
+        function startTabooGame() {
+            const card = getUniqueItem('taboo', TABOO_DATA);
+            const player = getFairPlayer();
+            state.currentGame = { type: 'taboo', phase: 'prepare', card, player, revealed: false, timeLeft: 60, score: 0 };
+            playSound('click');
+            render();
+        }
+        function startTabooRound() {
+            state.currentGame.phase = 'playing';
+            state.currentGame.revealed = true;
+            playSound('click');
+            saveState();
+            render();
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                state.currentGame.timeLeft--;
+                const timerEl = document.getElementById('game-timer');
+                if (timerEl) timerEl.innerText = getTimer(state.currentGame.timeLeft);
+                if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); state.currentGame.phase = 'result'; playSound('fail'); saveState(); render(); }
+                else if (state.currentGame.timeLeft <= 10) playSound('tick');
+            }, 1000);
+        }
+        function tabooCorrect() { 
+            // سجل النقطة للاعب الحالي قبل تبديل الدور
+            updateScore(state.currentGame.player.id, false, 1);
+            state.currentGame.score++; 
+            playSound('success'); 
+            // انتقل للاعب التالي
+            const nextPlayer = getFairPlayer();
+            state.currentGame.player = nextPlayer;
+            state.currentGame.card = getUniqueItem('taboo', TABOO_DATA);
+            saveState();
+            render(); 
+        }
+        function tabooSkip() { 
+            playSound('click'); 
+            // انتقل للاعب التالي
+            const nextPlayer = getFairPlayer();
+            state.currentGame.player = nextPlayer;
+            state.currentGame.card = getUniqueItem('taboo', TABOO_DATA);
+            saveState();
+            render(); 
+        }
+        function tabooFail() { 
+            state.currentGame.score--; 
+            playSound('fail'); 
+            // انتقل للاعب التالي
+            const nextPlayer = getFairPlayer();
+            state.currentGame.player = nextPlayer;
+            state.currentGame.card = getUniqueItem('taboo', TABOO_DATA);
+            saveState();
+            render(); 
+        }
+        function renderTabooSetup() {
+            if (!state.currentGame || state.currentGame.type !== 'taboo') return renderGameStartScreen('أوعى تقولها', 'اشرح الكلمة اللي فوق من غير ما تقول أي كلمة من الممنوعات اللي تحتها!', '🚫', 'ابدأ التحدي', 'startTabooGame()', 'bg-rose-900');
+            const game = state.currentGame;
+            if (game.phase === 'prepare') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-rose-900 text-white text-center animate-in"><p class="text-xl opacity-80 mb-2">الدور على</p><h1 class="text-4xl font-black mb-8">${game.player.name}</h1><div class="bg-white/10 p-6 rounded-2xl border-2 border-white/20 w-full mb-8 relative overflow-hidden">${!game.revealed ? `<div onclick="state.currentGame.revealed = true; render()" class="absolute inset-0 bg-rose-950 z-10 flex items-center justify-center cursor-pointer hover:bg-rose-900 transition"><span class="text-xl font-bold animate-pulse">دوس عشان تشوف الكلمة</span></div>` : ''}<p class="text-sm mb-2 opacity-75">الكلمة المطلوبة:</p><h2 class="text-3xl font-bold text-yellow-300">${game.card.word}</h2></div><button onclick="startTabooRound()" class="w-full py-4 bg-white text-rose-900 rounded-xl font-bold text-xl" ${!game.revealed ? 'disabled opacity-50' : ''}>جاهز! ابدأ</button></div>`;
+            if (game.phase === 'playing') return `<div class="h-screen flex flex-col p-6 bg-white"><div class="text-center mb-4"><p class="text-lg font-bold opacity-80">الدور على: <span class="text-rose-600">${game.player.name}</span></p></div><div class="relative mb-6"><div class="absolute left-0 top-1/2 -translate-y-1/2 text-xl font-bold text-rose-900">النقاط: ${game.score}</div><div class="text-center"><div class="inline-block text-3xl font-black text-rose-600 px-4 py-1 bg-rose-50 rounded-full" id="game-timer">${getTimer(game.timeLeft)}</div></div></div><div class="flex-1 flex flex-col justify-center items-center"><div class="w-full bg-rose-50 border-2 border-rose-200 rounded-2xl p-6 text-center mb-4"><h1 class="text-3xl font-black leading-relaxed text-center text-rose-900 mb-6">${game.card.word}</h1><div class="bg-white rounded-xl p-4 shadow-inner"><p class="text-sm text-red-500 font-bold mb-3">🚫 ممنوع تقول:</p>${game.card.taboo.map(t => `<div class="text-lg font-bold text-slate-700 border-b border-slate-100 last:border-0 py-1">${t}</div>`).join('')}</div></div></div><div class="grid grid-cols-3 gap-2 h-20"><button onclick="tabooFail()" class="bg-red-600 text-white rounded-xl font-bold text-lg">غلطة</button><button onclick="tabooSkip()" class="bg-slate-500 text-white rounded-xl font-bold text-lg">تخطي</button><button onclick="tabooCorrect()" class="bg-green-600 text-white rounded-xl font-bold text-lg">صح</button></div></div>`;
+            if (game.phase === 'result') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-rose-900 text-white text-center"><h2 class="text-3xl font-bold mb-4">خلص الوقت!</h2><div class="text-6xl font-black text-yellow-300 mb-4">${game.score}</div><p class="text-xl mb-8">نقطة</p><button onclick="startTabooGame()" class="w-full py-4 bg-rose-700 rounded-xl font-bold text-xl mb-3">جولة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-800 rounded-xl font-bold">خروج</button></div>`;
+        }
+
+        // --- STORY ---
+        function startStoryGame() { 
+            const story = getUniqueItem('story', STORY_DATA);
+            const currentPlayer = getFairPlayer();
+            state.currentGame = { type: 'story', phase: 'ready', story, revealed: false, timeLeft: 60, currentPlayer }; 
+            playSound('click'); 
+            saveState();
+            render(); 
+        }
+        function startStoryRound() { 
+            state.currentGame.phase = 'playing'; 
+            state.currentGame.revealed = true; 
+            playSound('click'); 
+            render(); 
+            if (gameInterval) clearInterval(gameInterval); 
+            gameInterval = setInterval(() => { 
+                state.currentGame.timeLeft--; 
+                const t = document.getElementById('game-timer'); 
+                if(t) t.innerText = state.currentGame.timeLeft; 
+                if (state.currentGame.timeLeft <= 0) { 
+                    clearInterval(gameInterval); 
+                    state.currentGame.phase = 'result'; 
+                    playSound('fail'); 
+                    render(); 
+                } else if (state.currentGame.timeLeft <= 10) playSound('tick'); 
+            }, 1000); 
+        }
+        function storyNextPlayer() {
+            // انتقل للاعب التالي باستخدام turnQueue
+            const nextPlayer = getFairPlayer();
+            state.currentGame.currentPlayer = nextPlayer;
+            saveState();
+            render();
+        }
+        function storySuccess() { 
+            // النقطة للاعب الحالي (صاحب الدور)
+            if(state.currentGame.currentPlayer) updateScore(state.currentGame.currentPlayer.id, false, 1); 
+            startStoryGame(); 
+        }
+        function storyFail() { 
+            if (state.daresEnabled) showDare(); 
+            startStoryGame(); 
+        }
+        function renderStorySetup() { 
+            if (!state.currentGame || state.currentGame.type !== 'story') return renderGameStartScreen('حكاية في كلمتين', 'بداية قصة ونهاية إجبارية. كل واحد يقول كلمة واحدة بس عشان توصلوا للنهاية دي في خلال 60 ثانية!', '📖', 'افتح الكتاب', 'startStoryGame()', 'bg-amber-600'); 
+            const game = state.currentGame; 
+            if (game.phase === 'ready') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-amber-700 text-white text-center animate-in"><div class="text-6xl mb-6">📜</div><h2 class="text-3xl font-bold mb-8">جاهزين للتأليف؟</h2><div onclick="startStoryRound()" class="w-full py-8 bg-white text-amber-900 rounded-2xl font-black text-2xl shadow-xl cursor-pointer hover:bg-amber-50 transition border-4 border-amber-200">دوس واكشف القصة</div></div>`; 
+            if (game.phase === 'playing') return `<div class="h-screen flex flex-col p-6 bg-white animate-in"><div class="text-center mb-4"><p class="text-lg font-bold opacity-80">الدور على: <span class="text-amber-600">${game.currentPlayer ? game.currentPlayer.name : 'لاعب'}</span></p></div><div class="flex-1 flex flex-col justify-center items-center space-y-6"><div class="bg-amber-50 p-6 rounded-2xl border-l-4 border-amber-500 w-full"><p class="text-sm text-amber-600 font-bold mb-2">البداية:</p><h1 class="text-3xl font-black leading-relaxed text-center text-slate-800">"${game.story.start}"</h1></div><div class="bg-amber-50 p-6 rounded-2xl border-l-4 border-red-500 w-full"><p class="text-sm text-red-600 font-bold mb-2">النهاية الإجبارية:</p><h1 class="text-3xl font-black leading-relaxed text-center text-slate-800">"${game.story.end}"</h1></div><div class="text-center mt-4"><div class="text-6xl font-black text-amber-600" id="game-timer">${game.timeLeft}</div></div></div><div class="space-y-3 mt-auto"><button onclick="storySuccess()" class="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-xl shadow-lg">✓ وصلتوا للنهاية!</button><button onclick="storyNextPlayer()" class="w-full py-3 bg-blue-500 text-white rounded-xl font-bold">التالي (دور جديد)</button><button onclick="storyFail()" class="w-full py-3 bg-red-500 text-white rounded-xl font-bold">✗ الوقت خلص (عقاب)</button></div></div>`; 
+            if (game.phase === 'result') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-amber-900 text-white text-center"><h2 class="text-3xl font-bold mb-4">انتهت القصة!</h2><button onclick="startStoryGame()" class="w-full py-4 bg-amber-600 rounded-xl font-bold text-xl mb-3">قصة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-800 rounded-xl font-bold">خروج</button></div>`; 
+        }
+
+        // --- MORPH ---
+        function startMorphGame() { 
+            const word = getUniqueItem('morph', MORPH_DATA);
+            const startingPlayer = getFairPlayer();
+            state.currentGame = { type: 'morph', phase: 'ready', word, timeLeft: 45, startingPlayer, losers: [] }; 
+            playSound('click'); 
+            saveState();
+            render(); 
+        }
+        function startMorphRound() { 
+            state.currentGame.phase = 'playing'; 
+            playSound('click'); 
+            render(); 
+            if (gameInterval) clearInterval(gameInterval); 
+            gameInterval = setInterval(() => { 
+                state.currentGame.timeLeft--; 
+                const t = document.getElementById('game-timer'); 
+                if(t) t.innerText = state.currentGame.timeLeft; 
+                if (state.currentGame.timeLeft <= 0) { 
+                    clearInterval(gameInterval); 
+                    state.currentGame.phase = 'result'; 
+                    playSound('fail'); 
+                    render(); 
+                } else if (state.currentGame.timeLeft <= 10) playSound('tick'); 
+            }, 1000); 
+        }
+        function toggleMorphLoser(playerId) {
+            if (!state.currentGame.losers) state.currentGame.losers = [];
+            const index = state.currentGame.losers.indexOf(playerId);
+            if (index > -1) {
+                state.currentGame.losers.splice(index, 1);
+            } else {
+                state.currentGame.losers.push(playerId);
+            }
+            render();
+        }
+        function morphSuccess() {
+            // Round ended successfully - all players succeeded
+            // Optional: Award point to starting player
+            if (state.currentGame.startingPlayer) {
+                updateScore(state.currentGame.startingPlayer.id, false, 1);
+            }
+            playSound('success');
+            startMorphGame();
+        }
+        function morphFail() {
+            // Someone failed - go to result phase to select losers
+            if (gameInterval) clearInterval(gameInterval);
+            state.currentGame.phase = 'result';
+            playSound('fail');
+            saveState();
+            render();
+        }
+        function morphConfirmResult() {
+            // كل خاسر يتخصم منه (-1)
+            state.currentGame.losers.forEach(loserId => {
+                updateScore(loserId, false, -1);
+            });
+            // اللاعب الوحيد اللي متمش اختياره كخاسر ياخد (+2)
+            const allPlayerIds = state.players.map(p => p.id);
+            const winners = allPlayerIds.filter(id => !state.currentGame.losers.includes(id));
+            if (winners.length === 1) {
+                updateScore(winners[0], false, 2);
+            }
+            startMorphGame();
+        }
+        function renderMorphSetup() { 
+            if (!state.currentGame || state.currentGame.type !== 'morph') return renderGameStartScreen('الكلمة المتحولة', 'كلمة هتظهر. كل لاعب يغير حرف واحد بس عشان يعمل كلمة جديدة ليها معنى. لو حد وقف أو الوقت خلص بيخسر!', '🔤', 'هات الكلمة', 'startMorphGame()', 'bg-cyan-700'); 
+            const game = state.currentGame; 
+            if (game.phase === 'ready') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-cyan-700 text-white text-center animate-in"><div class="text-6xl mb-6">🎲</div><h2 class="text-3xl font-bold mb-8">جاهزين للتغيير؟</h2><div class="mb-4"><p class="text-lg opacity-80 mb-2">الدور على:</p><h3 class="text-2xl font-bold text-yellow-300">${game.startingPlayer ? game.startingPlayer.name : 'لاعب'}</h3></div><div onclick="startMorphRound()" class="w-full py-8 bg-white text-cyan-900 rounded-2xl font-black text-2xl shadow-xl cursor-pointer hover:bg-cyan-50 transition border-4 border-cyan-200">دوس واكشف الكلمة</div></div>`; 
+            if (game.phase === 'playing') return `<div class="h-screen flex flex-col p-6 bg-white animate-in"><div class="text-center mb-4"><p class="text-lg font-bold opacity-80">الدور على: <span class="text-cyan-600">${game.startingPlayer ? game.startingPlayer.name : 'لاعب'}</span></p></div><div class="flex-1 flex flex-col justify-center items-center text-center"><p class="text-lg text-slate-500 mb-4">كلمة البداية:</p><div class="bg-cyan-100 p-8 rounded-3xl w-full mb-8 shadow-inner"><h1 class="text-3xl font-black leading-relaxed text-center text-cyan-800">${game.word}</h1></div><div class="text-8xl font-black text-cyan-600" id="game-timer">${game.timeLeft}</div></div><div class="space-y-3 mt-auto"><button onclick="morphSuccess()" class="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-xl shadow-lg">✓ نجح (+1 نقطة)</button><button onclick="morphFail()" class="w-full py-3 bg-red-500 text-white rounded-xl font-bold">✗ فشل</button></div></div>`; 
+            if (game.phase === 'result') {
+                if (!game.losers) game.losers = [];
+                return `<div class="h-screen flex flex-col p-6 bg-cyan-900 text-white"><h2 class="text-3xl font-bold mb-6 text-center">الجولة خلصت!</h2><p class="text-lg mb-4 text-center opacity-80">مين اللي خسروا؟ (اختر كل الخاسرين)</p><div class="flex-1 overflow-y-auto mb-4">${state.players.map(p => `<label class="flex items-center p-4 bg-white/10 rounded-xl mb-2 cursor-pointer hover:bg-white/20 transition"><input type="checkbox" ${game.losers.includes(p.id) ? 'checked' : ''} onchange="toggleMorphLoser(${p.id})" class="w-6 h-6 mr-3"><span class="text-xl font-bold">${p.name}</span></label>`).join('')}</div><button onclick="morphConfirmResult()" class="w-full py-4 bg-cyan-600 rounded-xl font-bold text-xl mb-3">تأكيد النتيجة</button><button onclick="goHome()" class="w-full py-3 bg-slate-800 rounded-xl font-bold">خروج</button></div>`; 
+            }
+        }
+
+        // --- ARTIST ---
+        function startArtistGame() { if (state.players.length < 2) { alert("محتاجين لاعبين على الأقل!"); return; } const word = getUniqueItem('artist', ARTIST_DATA); const artist = getFairPlayer(); let guesser = state.players[Math.floor(Math.random() * state.players.length)]; while (guesser.id === artist.id) guesser = state.players[Math.floor(Math.random() * state.players.length)]; state.currentGame = { type: 'artist', phase: 'setup', word, artist, guesser, timeLeft: 60, revealed: false }; playSound('click'); render(); }
+        function revealArtistWord() { state.currentGame.revealed = true; playSound('click'); saveState(); render(); }
+        function startArtistDrawing() { state.currentGame.phase = 'drawing'; playSound('click'); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = state.currentGame.timeLeft; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); state.currentGame.phase = 'result'; playSound('fail'); saveState(); render(); } else if (state.currentGame.timeLeft <= 10) playSound('tick'); }, 1000); }
+        function artistSuccess() { updateScore(state.currentGame.guesser.id, false, 1); updateScore(state.currentGame.artist.id, false, 1); startArtistGame(); }
+        function renderArtistSetup() { 
+            if (!state.currentGame || state.currentGame.type !== 'artist') return renderGameStartScreen('الرسام الأعمى', 'الرسام يشوف الكلمة. اللاعب التاني يحط الموبايل على راسه أو ميبصش. الرسام يرسم، والتاني يخمن من وصف الناس للرسمة!', '🎨', 'ابدأ الفن', 'startArtistGame()', 'bg-fuchsia-600'); 
+            const game = state.currentGame; 
+            if (game.phase === 'setup') {
+                if (!game.revealed) {
+                    return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-fuchsia-800 text-white text-center animate-in"><h2 class="text-2xl font-bold mb-4">يا <span class="text-yellow-300">${game.artist.name}</span></h2><p class="mb-8">خد الموبايل ومسكه كويس!</p><div class="bg-white/20 p-8 rounded-3xl mb-8 border border-white/30 relative overflow-hidden"><div class="absolute inset-0 bg-fuchsia-800 blur-md flex items-center justify-center"><span class="text-4xl font-black opacity-50">🎨</span></div><p class="text-sm opacity-75 mb-2 relative z-10" style="filter: blur(8px); user-select: none;">مطلوب ترسم:</p><h1 class="text-4xl font-black relative z-10" style="filter: blur(8px); user-select: none;">${game.word}</h1></div><button onclick="revealArtistWord()" class="w-full py-4 bg-white text-fuchsia-900 rounded-xl font-bold text-xl shadow-xl">اضغط للكشف</button></div>`;
+                }
+                return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-fuchsia-800 text-white text-center animate-in"><h2 class="text-2xl font-bold mb-4">يا <span class="text-yellow-300">${game.artist.name}</span></h2><p class="mb-8">خد الموبايل ومسكه كويس!</p><div class="bg-white/20 p-8 rounded-3xl mb-8 border border-white/30"><p class="text-sm opacity-75 mb-2">مطلوب ترسم:</p><h1 class="text-4xl font-black">${game.word}</h1></div><p class="mb-4 text-sm opacity-80">دلوقتي خبي الكلمة وادي الموبايل لـ ${game.guesser.name}</p><button onclick="startArtistDrawing()" class="w-full py-4 bg-white text-fuchsia-900 rounded-xl font-bold text-xl shadow-xl">يلا نرسم!</button></div>`;
+            }
+            if (game.phase === 'drawing') return `<div class="h-screen flex flex-col p-6 bg-white animate-in"><div class="text-center mt-4 mb-4"><p class="text-lg font-bold opacity-80">الرسام: <span class="text-fuchsia-600">${game.artist.name}</span></p><p class="text-lg font-bold opacity-80">بيخمن: <span class="text-fuchsia-600">${game.guesser.name}</span></p></div><div class="flex-1 flex flex-col justify-center items-center"><div class="text-9xl font-black text-fuchsia-600 mb-8" id="game-timer">${game.timeLeft}</div><p class="text-center text-slate-600 px-4">الرسام بيرسم دلوقت.. والناس بتوصف الرسمة (من غير ما يقولوا الكلمة!)</p></div><div class="space-y-3 mt-auto"><button onclick="artistSuccess()" class="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-xl shadow-lg">✓ عرفها!</button><button onclick="state.currentGame.phase='result'; render()" class="w-full py-3 bg-red-500 text-white rounded-xl font-bold">✗ معرفش</button></div></div>`; 
+            if (game.phase === 'result') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-fuchsia-900 text-white text-center"><h2 class="text-3xl font-bold mb-4">خلص الوقت!</h2><p class="mb-4 text-xl">الكلمة كانت: <span class="text-yellow-300 font-bold">${game.word}</span></p><button onclick="startArtistGame()" class="w-full py-4 bg-fuchsia-600 rounded-xl font-bold text-xl mb-3">رسمة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-800 rounded-xl font-bold">خروج</button></div>`; 
+        }
+
+        // --- WHISPER ---
+        function startWhisperGame() { if (state.players.length < 2) { alert("محتاجين لاعبين على الأقل!"); return; } const phrase = getUniqueItem('whisper', WHISPER_DATA); const listener = getFairPlayer(); let speakerIndex = Math.floor(Math.random() * state.players.length); while (state.players[speakerIndex].id === listener.id) speakerIndex = Math.floor(Math.random() * state.players.length); state.currentGame = { type: 'whisper', phase: 'setup', phrase: phrase, listener, speaker: state.players[speakerIndex], timeLeft: 60, revealed: false }; playSound('click'); render(); }
+        function startWhisperRound() { state.currentGame.phase = 'playing'; state.currentGame.revealed = true; playSound('click'); saveState(); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = state.currentGame.timeLeft; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); state.currentGame.phase = 'result'; playSound('fail'); saveState(); render(); } else if (state.currentGame.timeLeft <= 10) playSound('tick'); }, 1000); }
+        function whisperSuccess() { updateScore(state.currentGame.listener.id, false, 1); startWhisperGame(); }
+        function whisperFail() { if (state.daresEnabled) showDare(); startWhisperGame(); }
+        function renderWhisperSetup() { 
+            if (!state.currentGame || state.currentGame.type !== 'whisper') return renderGameStartScreen('إقرأ شفايفي', 'واحد يلبس سماعة فيها أغنية بصوت عالي، والتاني يقرأ جملة عشوائية. حاول تخمن الجملة من حركة الشفايف!', '🎧', 'ابدأ اللعبة', 'startWhisperGame()', 'bg-pink-500'); 
+            const game = state.currentGame; 
+            if (game.phase === 'setup') { 
+                return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-pink-600 text-white text-center animate-in"><div class="mb-8"><p class="text-lg opacity-80">يلبس السماعة:</p><h1 class="text-4xl font-black text-yellow-300 mb-4">${game.listener.name}</h1><div class="w-full h-1 bg-white/20 rounded-full mb-4"></div><p class="text-lg opacity-80">يقرأ الجملة:</p><h1 class="text-3xl font-bold">${game.speaker.name}</h1></div><div class="bg-white/10 p-6 rounded-2xl border border-white/20 mb-8"><p class="text-sm">يا ${game.listener.name}، علي الصوت عالاخر! 🎵</p></div><button onclick="startWhisperRound()" class="w-full py-4 bg-white text-pink-700 rounded-xl font-bold text-xl shadow-xl">جاهزين! اكشف الجملة</button></div>`; 
+            } 
+            if (game.phase === 'playing') { 
+                return `<div class="h-screen flex flex-col p-6 bg-white animate-in"><div class="text-center mt-4 mb-8"><p class="text-lg font-bold opacity-80">المتحدث: <span class="text-pink-600">${game.speaker.name}</span></p></div><div class="flex-1 flex flex-col justify-center items-center"><div class="text-9xl font-black text-pink-600 mb-8" id="game-timer">${game.timeLeft}</div><div class="bg-pink-50 p-6 rounded-2xl border-2 border-pink-100 w-full text-center"><p class="text-sm text-pink-400 mb-2">الجملة هي:</p><h1 class="text-3xl font-black leading-relaxed text-center text-slate-800">${game.phrase}</h1></div></div><div class="space-y-3 mt-auto"><button onclick="whisperSuccess()" class="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-xl shadow-lg">✓ عرفها! (+نقطة)</button><button onclick="whisperFail()" class="w-full py-3 bg-slate-200 text-slate-600 rounded-xl font-bold">معرفش (تخطي)</button></div></div>`; 
+            } 
+            if (game.phase === 'result') { 
+                return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-pink-900 text-white text-center"><h2 class="text-3xl font-bold mb-4">خلص الوقت!</h2><p class="text-xl mb-8">الجملة كانت: <br><span class="text-yellow-300 font-bold">${game.phrase}</span></p><button onclick="startWhisperGame()" class="w-full py-4 bg-pink-600 rounded-xl font-bold text-xl mb-3">جولة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-800 rounded-xl font-bold">خروج</button></div>`; 
+            } 
+        }
+
+        // --- NEVER ---
+        function startNeverGame() { const statement = getUniqueItem('never', NEVER_DATA); state.currentGame = { type: 'never', phase: 'ready', statement: statement, revealed: false }; playSound('click'); render(); }
+        function revealNeverCard() { state.currentGame.phase = 'playing'; state.currentGame.revealed = true; playSound('click'); render(); }
+        function neverScoreSelect() { state.currentGame.phase = 'scoring'; saveState(); render(); }
+        function renderNeverSetup() { if (!state.currentGame || state.currentGame.type !== 'never') return renderGameStartScreen('أنا عمري ما', 'ارفعوا 5 أصابع. جملة هتظهر، لو عملت الحاجة دي قبل كده، نزل صباع. آخر واحد يفضل رافع صباعه هو الكسبان!', '✋', 'ابدأ اللعبة', 'startNeverGame()', 'bg-rose-800'); const game = state.currentGame; if (game.phase === 'ready') { return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-rose-800 text-white text-center animate-in"><div class="text-6xl mb-6">✋</div><h2 class="text-3xl font-bold mb-8">جاهزين؟</h2><p class="text-lg opacity-80 mb-8">ارفعوا إيديكم (5 أصابع) دلوقتي!</p><div onclick="revealNeverCard()" class="w-full py-8 bg-white text-rose-900 rounded-2xl font-black text-2xl shadow-xl cursor-pointer hover:bg-rose-50 transition border-4 border-rose-200">دوس واكشف الكارت</div></div>`; } if (game.phase === 'playing') { return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-rose-800 text-white text-center animate-in"><p class="text-xl font-bold opacity-75 mb-4">أنا عمري ما...</p><div class="bg-white text-slate-900 p-8 rounded-3xl w-full mb-8 shadow-2xl"><h1 class="text-3xl font-black leading-relaxed">${game.statement}</h1></div><div class="w-full space-y-3"><button onclick="startNeverGame()" class="w-full py-4 bg-yellow-500 text-rose-900 rounded-xl font-bold text-xl shadow-lg">الكارت اللي بعده</button><button onclick="neverScoreSelect()" class="w-full py-3 bg-rose-900/50 text-white border border-rose-400 rounded-xl font-bold">توزيع نقاط (اختياري)</button><button onclick="goHome()" class="w-full py-3 bg-transparent text-rose-200 font-bold">خروج</button></div></div>`; } if (game.phase === 'scoring') { return `<div class="h-screen flex flex-col p-6 bg-rose-900 text-white text-center"><h2 class="text-2xl font-bold mb-6">مين يستحق النقطة؟</h2><div class="grid grid-cols-2 gap-3 w-full mb-8 flex-1 overflow-y-auto content-start">${state.players.map(p => `<button onclick="updateScore(${p.id}, false, 1); startNeverGame()" class="p-4 bg-white/10 border border-white/20 rounded-xl font-bold hover:bg-white/20">${p.name}</button>`).join('')}</div><button onclick="startNeverGame()" class="w-full py-3 bg-slate-700 rounded-xl font-bold">تخطي (بدون نقاط)</button></div>`; } }
+
+        // --- DEBATE ---
+        function startDebateGame() { if (state.players.length < 2) { alert("محتاجين لاعبين على الأقل!"); return; } const topic = getUniqueItem('debate', DEBATE_DATA); const p1 = getFairPlayer(); let p2 = state.players[Math.floor(Math.random() * state.players.length)]; while (p2.id === p1.id) p2 = state.players[Math.floor(Math.random() * state.players.length)]; state.currentGame = { type: 'debate', phase: 'assign', topic, p1, p2, timeLeft: 60, revealed: false }; playSound('click'); render(); }
+        function startDebateRound() { state.currentGame.phase = 'playing'; state.currentGame.revealed = true; playSound('click'); saveState(); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = state.currentGame.timeLeft; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); state.currentGame.phase = 'voting'; playSound('fail'); saveState(); render(); } else if (state.currentGame.timeLeft <= 10) playSound('tick'); }, 1000); }
+        function endDebateEarly() { if (gameInterval) clearInterval(gameInterval); state.currentGame.phase = 'voting'; playSound('fail'); saveState(); render(); }
+        function debateVote(winnerId) { updateScore(winnerId, false, 1); state.currentGame.phase = 'result'; saveState(); render(); }
+        function renderDebateSetup() { 
+            if (!state.currentGame || state.currentGame.type !== 'debate') return renderGameStartScreen('محكمة', 'موضوع جدلي تافه هيطلع. اللعبة هتختار "محامي" و "نيابة". كل واحد معاه دقيقة يقنع القعدة بوجهة نظره!', '⚖️', 'ابدأ الجلسة', 'startDebateGame()', 'bg-amber-700'); 
+            const game = state.currentGame; 
+            if (game.phase === 'assign') { 
+                return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-amber-800 text-white text-center animate-in"><h2 class="text-3xl font-bold mb-8">أطراف القضية</h2><div class="w-full bg-white/10 p-4 rounded-xl mb-4 border-r-4 border-green-400"><p class="text-sm opacity-75">مع الموضوع (دفاع)</p><h1 class="text-2xl font-black">${game.p1.name}</h1></div><div class="text-2xl font-bold mb-4">VS</div><div class="w-full bg-white/10 p-4 rounded-xl mb-8 border-r-4 border-red-400"><p class="text-sm opacity-75">ضد الموضوع (نيابة)</p><h1 class="text-2xl font-black">${game.p2.name}</h1></div><button onclick="startDebateRound()" class="w-full py-4 bg-white text-amber-900 rounded-xl font-bold text-xl shadow-xl">اكشف القضية وابدأ</button></div>`; 
+            } 
+            if (game.phase === 'playing') { 
+                return `<div class="h-screen flex flex-col p-6 bg-white animate-in"><div class="text-center mt-4 mb-4"><p class="text-lg font-bold opacity-80">القضية رقم #99</p></div><div class="bg-amber-50 p-6 rounded-2xl border-2 border-amber-100 w-full text-center mb-6 shadow-sm"><h1 class="text-3xl font-black leading-relaxed text-center text-slate-800">${game.topic}</h1></div><div class="flex-1 flex flex-col justify-center items-center"><div class="text-9xl font-black text-amber-600" id="game-timer">${game.timeLeft}</div></div><div class="flex justify-between gap-4 mt-auto mb-4"><div class="text-center w-1/2"><div class="font-bold text-green-600 mb-1">مع</div><div class="p-2 bg-green-50 rounded-lg font-bold text-sm">${game.p1.name}</div></div><div class="text-center w-1/2"><div class="font-bold text-red-600 mb-1">ضد</div><div class="p-2 bg-red-50 rounded-lg font-bold text-sm">${game.p2.name}</div></div></div><button onclick="endDebateEarly()" class="w-full py-3 bg-red-500 text-white rounded-xl font-bold text-lg shadow-lg">إنهاء الجلسة فوراً</button></div>`; 
+            } 
+            if (game.phase === 'voting') { 
+                return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-amber-900 text-white text-center animate-in"><div class="text-6xl mb-6">👨‍⚖️</div><h2 class="text-3xl font-bold mb-8">حكم المحكمة!</h2><p class="text-lg opacity-80 mb-6">مين أقنعكم أكتر؟</p><div class="w-full space-y-4"><button onclick="debateVote(${game.p1.id})" class="w-full py-4 bg-green-600 text-white rounded-xl font-bold text-xl shadow-lg hover:bg-green-700">${game.p1.name} (مع)</button><button onclick="debateVote(${game.p2.id})" class="w-full py-4 bg-red-600 text-white rounded-xl font-bold text-xl shadow-lg hover:bg-red-700">${game.p2.name} (ضد)</button></div></div>`; 
+            } 
+            if (game.phase === 'result') { 
+                return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-amber-900 text-white text-center"><h2 class="text-3xl font-bold mb-4">تم الحكم!</h2><p class="mb-8">تم إضافة النقطة للفائز.</p><button onclick="startDebateGame()" class="w-full py-4 bg-amber-600 rounded-xl font-bold text-xl mb-3">قضية جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-800 rounded-xl font-bold">خروج</button></div>`; 
+            } 
+        }
+
+        // --- HEADS UP (FIXED) ---
+        function startHeadsUpGame(category) {
+            const words = HEADS_UP_DATA[category];
+            const player = getFairPlayer();
+            state.currentGame = {
+                type: 'heads_up',
+                phase: 'ready_check',
+                category: category,
+                pool: [...words],
+                currentWord: null,
+                score: 0,
+                timeLeft: 60,
+                skipped: 0,
+                currentPlayer: player,
+                wordHidden: true
+            };
+            playSound('click');
+            saveState();
+            render();
+        }
+
+        function headsUpReady() {
+            const words = state.currentGame.pool;
+            state.currentGame.currentWord = words[Math.floor(Math.random() * words.length)];
+            state.currentGame.phase = 'playing';
+            state.currentGame.wordHidden = true;
+            playSound('click');
+            render();
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                state.currentGame.timeLeft--;
+                const t = document.getElementById('hu-timer');
+                if(t) t.innerText = state.currentGame.timeLeft;
+                if (state.currentGame.timeLeft <= 0) {
+                    clearInterval(gameInterval);
+                    updateScore(state.currentGame.currentPlayer.id, false, state.currentGame.score);
+                    state.currentGame.phase = 'result';
+                    playSound('fail');
+                    saveState();
+                    render();
+                } else if (state.currentGame.timeLeft <= 10) playSound('tick');
+            }, 1000);
+        }
+
+        function revealHeadsUpWord() {
+            state.currentGame.wordHidden = false;
+            playSound('click');
+            render();
+        }
+
+        function headsUpCorrect() {
+            state.currentGame.score++;
+            playSound('success');
+            headsUpNextWord();
+        }
+
+        function headsUpPass() {
+            state.currentGame.skipped++;
+            playSound('fail');
+            headsUpNextWord();
+        }
+
+        function headsUpNextWord() {
+            const words = state.currentGame.pool;
+            state.currentGame.currentWord = words[Math.floor(Math.random() * words.length)];
+            state.currentGame.wordHidden = true;
+            saveState();
+            render();
+        }
+
+        function renderHeadsUpSetup() {
+            if (!state.currentGame || state.currentGame.type !== 'heads_up') {
+                const categories = Object.keys(HEADS_UP_DATA);
+                return `
+                    <div class="p-6 h-screen flex flex-col bg-blue-50">
+                        ${header('🤯 على راسي', 'home')}
+                        <div class="text-center mb-6">
+                            <div class="text-6xl mb-4">🤯</div>
+                            <h3 class="font-bold text-blue-800 mb-2">اختار القسم:</h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start pb-32">
+                            ${categories.map(cat => {
+                                // Format category name: put text in parentheses on new line with smaller/lighter text
+                                let displayName = cat;
+                                if (cat.includes('(')) {
+                                    displayName = cat.replace('(', '<br/><span class="text-sm opacity-90">(') + '</span>';
+                                }
+                                return `
+                                <button onclick="startHeadsUpGame('${cat}')" class="w-full min-h-[80px] flex items-center justify-center py-6 rounded-2xl font-black text-xl shadow-md border-b-4 bg-white border-blue-500 text-blue-600 hover:bg-blue-50 transition active:scale-95 text-center break-words leading-tight">
+                                    ${displayName}
+                                </button>
+                            `;
+                            }).join('')}
+                        </div>
+                        <button onclick="startHeadsUpMix()" class="fixed bottom-6 left-4 right-4 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white font-black text-xl py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform z-50 flex justify-center items-center gap-2 active:scale-95">
+                            <span>🔀</span> كوكتيل كل الأقسام
+                        </button>
+                    </div>
+                `;
+            }
+
+            const game = state.currentGame;
+
+            if (game.phase === 'ready_check') {
+                return `
+                    <div class="h-screen flex flex-col items-center justify-center p-6 bg-blue-600 text-white text-center animate-in">
+                        <p class="text-xl opacity-80 mb-2">الدور على</p>
+                        <h1 class="text-5xl font-black mb-10 text-yellow-300">${game.currentPlayer.name}</h1>
+                        <div class="bg-white/10 p-6 rounded-2xl mb-8 border border-white/20">
+                            <p class="text-lg">حط الموبايل على جبهتك 📲</p>
+                            <p class="text-sm opacity-75 mt-2">خلي الشاشة ناحية صحابك</p>
+                        </div>
+                        <button onclick="headsUpReady()" class="w-full py-4 bg-white text-blue-700 rounded-xl font-bold text-2xl shadow-xl">
+                            جاهز! ابدأ
+                        </button>
+                    </div>
+                `;
+            }
+
+            if (game.phase === 'playing') {
+                return `
+                    <div class="h-screen flex flex-col p-4 bg-blue-600">
+                        <!-- Header -->
+                        <div class="flex justify-between items-center mb-4 text-white">
+                            <div class="font-bold text-lg ml-14">${game.currentPlayer.name}</div>
+                            <div class="text-4xl font-black text-yellow-300" id="hu-timer">${game.timeLeft}</div>
+                            <button onclick="goHome()" class="bg-red-500/80 px-4 py-1 rounded-lg text-sm">إنهاء</button>
+                        </div>
+
+                        <!-- Main Card Area -->
+                        <div class="flex-1 flex items-center justify-center relative mb-4">
+                            <div onclick="revealHeadsUpWord()" class="w-full h-full bg-white rounded-3xl shadow-2xl flex items-center justify-center cursor-pointer relative overflow-hidden">
+                                ${game.wordHidden ? `
+                                    <div class="text-center animate-pulse">
+                                        <div class="text-8xl text-blue-200 font-black mb-4">?</div>
+                                        <p class="text-blue-500 font-bold text-xl">دوس عشان تظهر الكلمة</p>
+                                    </div>
+                                ` : `
+                                    <!-- Rotated Text Container -->
+                                    <div class="rotate-90-text text-center w-[200vh]">
+                                        <h1 class="text-6xl md:text-8xl font-black text-slate-800 leading-tight">
+                                            ${game.currentWord}
+                                        </h1>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+
+                        <!-- Controls (Standard Buttons) -->
+                        <div class="grid grid-cols-2 gap-4 h-24">
+                            <button onclick="headsUpPass()" class="bg-red-500 hover:bg-red-600 text-white rounded-2xl text-xl font-bold flex flex-col items-center justify-center shadow-lg active:scale-95 transition">
+                                <span>✗</span>
+                                <span>تخطي</span>
+                            </button>
+                            <button onclick="headsUpCorrect()" class="bg-green-500 hover:bg-green-600 text-white rounded-2xl text-xl font-bold flex flex-col items-center justify-center shadow-lg active:scale-95 transition">
+                                <span>✓</span>
+                                <span>عرفها</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (game.phase === 'result') {
+                return `
+                    <div class="h-screen flex flex-col items-center justify-center p-6 bg-blue-900 text-white text-center animate-in">
+                        <h2 class="text-3xl font-bold mb-2">خلص الوقت!</h2>
+                        <h1 class="text-4xl font-black text-yellow-300 mb-6">${game.currentPlayer.name}</h1>
+                        
+                        <div class="grid grid-cols-2 gap-4 w-full mb-8">
+                            <div class="bg-green-500/20 p-4 rounded-xl border border-green-500/50">
+                                <div class="text-4xl font-black text-green-400">${game.score}</div>
+                                <div class="text-sm opacity-80">إجابة صح</div>
+                            </div>
+                            <div class="bg-red-500/20 p-4 rounded-xl border border-red-500/50">
+                                <div class="text-4xl font-black text-red-400">${game.skipped}</div>
+                                <div class="text-sm opacity-80">تخطي</div>
+                            </div>
+                        </div>
+
+                        <button onclick="navigate('home')" class="w-full py-4 bg-yellow-500 text-blue-900 rounded-xl font-bold text-xl shadow-lg mb-3">
+                            القائمة الرئيسية
+                        </button>
+                        
+                        <button onclick="goHome()" class="w-full py-3 bg-slate-700 rounded-xl font-bold">خروج</button>
+                    </div>
+                `;
+            }
+        }
+
+        // ================== OTHER GAMES ==================
+        function startEmojiMix() {
+            // Combine all categories into one mixed array
+            const allItems = Object.values(EMOJI_QUIZ_DATA).flat();
+            // Shuffle using Fisher-Yates
+            for (let i = allItems.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allItems[i], allItems[j]] = [allItems[j], allItems[i]];
+            }
+            const roundData = getUniqueItem('emoji_mix', allItems);
+            state.currentGame = { type: 'emoji', phase: 'playing', category: 'كوكتيل 🔀', data: roundData, revealed: false }; 
+            playSound('click'); 
+            saveState();
+            render();
+        }
+        
+        function startEmojiGame(category) {
+            const categoryData = EMOJI_QUIZ_DATA[category] || EMOJI_QUIZ_DATA['أفلام عربي'];
+            const roundData = getUniqueItem('emoji_' + category, categoryData);
+            state.currentGame = { type: 'emoji', phase: 'playing', category, data: roundData, revealed: false }; 
+            playSound('click'); 
+            saveState();
+            render(); 
+        }
+        function revealEmojiAnswer() { state.currentGame.revealed = true; playSound('click'); saveState(); render(); }
+        function emojiPlayerWins(playerId) { 
+            updateScore(playerId, false, 1); 
+            startEmojiGame(state.currentGame.category); 
+        }
+        function emojiSkip() { 
+            startEmojiGame(state.currentGame.category); 
+        }
+        function renderEmojiSetup() { 
+            if (!state.currentGame || state.currentGame.type !== 'emoji') {
+                const categories = Object.keys(EMOJI_QUIZ_DATA);
+                return `
+                    <div class="p-6 h-screen flex flex-col bg-yellow-50">
+                        ${header('🧩 فك الإيموجي', 'home')}
+                        <div class="text-center mb-6">
+                            <div class="text-6xl mb-4">🧩</div>
+                            <h3 class="font-bold text-yellow-800 mb-2">اختار الفئة:</h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start pb-32">
+                            ${categories.map(cat => `
+                                <button onclick="startEmojiGame('${cat}')" class="py-6 rounded-2xl font-black text-xl shadow-md border-b-4 bg-white border-yellow-500 text-yellow-600 hover:bg-yellow-50 transition active:scale-95">
+                                    ${cat}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <button onclick="startEmojiMix()" class="fixed bottom-6 left-4 right-4 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white font-black text-xl py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform z-50 flex justify-center items-center gap-2 active:scale-95">
+                            <span>🔀</span> كوكتيل كل الأقسام
+                        </button>
+                    </div>
+                `;
+            }
+            const game = state.currentGame; 
+            return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-yellow-500 text-white text-center animate-in"><div class="bg-white p-8 rounded-3xl shadow-xl w-full mb-8"><div class="text-6xl mb-4 leading-relaxed">${game.data.emojis}</div></div>${!game.revealed ? `<button onclick="revealEmojiAnswer()" class="w-full py-4 bg-slate-800 text-white rounded-xl font-bold text-xl shadow-lg">إظهار الإجابة</button>` : `<div class="mb-8 animate-in w-full"><p class="text-lg text-yellow-900 opacity-80 mb-2">الإجابة:</p><h2 class="text-4xl font-black text-yellow-900">${game.data.answer}</h2></div><p class="text-lg text-yellow-900 font-bold mb-4">مين اللي عرف الحل؟</p><div class="grid grid-cols-2 gap-3 w-full mb-4">${state.players.map(p => `<button onclick="emojiPlayerWins(${p.id})" class="py-3 bg-white text-yellow-600 rounded-xl font-bold text-lg shadow-lg hover:bg-yellow-50">${p.name}</button>`).join('')}</div><button onclick="emojiSkip()" class="w-full py-3 bg-slate-500 text-white rounded-xl font-bold mb-3">محدش عرف (تخطي)</button><button onclick="goHome()" class="w-full py-3 bg-yellow-700 text-white rounded-xl font-bold">خروج</button>`}</div>`; 
+        }
+        function startLyricsGame() { 
+            const roundData = getUniqueItem('lyrics', LYRICS_DATA);
+            const player = getFairPlayer(); 
+            state.currentGame = { type: 'lyrics', phase: 'playing', data: roundData, player, lyricsRevealed: false, answerRevealed: false }; 
+            playSound('click'); 
+            saveState();
+            render(); 
+        }
+        function revealLyricsText() { 
+            state.currentGame.lyricsRevealed = true; 
+            playSound('click'); 
+            saveState();
+            render(); 
+        }
+        function revealLyricsAnswer() { 
+            state.currentGame.answerRevealed = true; 
+            playSound('click'); 
+            saveState();
+            render(); 
+        }
+        function lyricsPlayerWins(playerId) { 
+            updateScore(playerId, false, 1); 
+            startLyricsGame(); 
+        }
+        function lyricsSkip() { 
+            startLyricsGame(); 
+        }
+        function renderLyricsSetup() { 
+            if (!state.currentGame || state.currentGame.type !== 'lyrics') return renderGameStartScreen('كمل الأغنية', 'هيظهر مقطع من أغنية وفيه كلمة ناقصة. كملها وغنيها صح!', '🎤', 'ابدأ اللعبة', 'startLyricsGame()', 'bg-purple-500'); 
+            const game = state.currentGame; 
+            if (!game.lyricsRevealed) {
+                return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-purple-600 text-white text-center animate-in"><div class="text-center mb-4"><p class="text-slate-200 mb-1">الدور على:</p><h2 class="text-2xl font-bold">${game.player.name}</h2></div><p class="mb-4 opacity-80 font-bold">${game.data.singer}</p><div class="bg-white/20 p-8 rounded-3xl w-full mb-8 backdrop-blur-sm border border-white/30 relative overflow-hidden"><div class="absolute inset-0 bg-purple-800 blur-md flex items-center justify-center"><span class="text-4xl font-black opacity-50">🎵</span></div><h2 class="text-2xl font-bold leading-relaxed mb-2 relative z-10" style="filter: blur(8px); user-select: none;">"${game.data.part}"</h2><div class="inline-block px-6 py-2 bg-black/20 rounded-lg mt-2 text-yellow-300 font-black text-2xl relative z-10" style="filter: blur(8px);">${game.data.answer}</div></div><button onclick="revealLyricsText()" class="w-full py-4 bg-white text-purple-700 rounded-xl font-bold text-xl shadow-lg">كشف الكلمات</button></div>`;
+            }
+            if (!game.answerRevealed) {
+                return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-purple-600 text-white text-center animate-in"><div class="text-center mb-4"><p class="text-slate-200 mb-1">الدور على:</p><h2 class="text-2xl font-bold">${game.player.name}</h2></div><p class="mb-4 opacity-80 font-bold">${game.data.singer}</p><div class="bg-white/20 p-8 rounded-3xl w-full mb-8 backdrop-blur-sm border border-white/30"><h2 class="text-2xl font-bold leading-relaxed mb-2">"${game.data.part}"</h2><div class="inline-block px-6 py-2 bg-black/20 rounded-lg mt-2 text-yellow-300 font-black text-2xl">؟؟؟؟؟</div></div><button onclick="revealLyricsAnswer()" class="w-full py-4 bg-white text-purple-700 rounded-xl font-bold text-xl shadow-lg">كشف الكلمة</button></div>`;
+            }
+            return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-purple-600 text-white text-center animate-in"><div class="text-center mb-4"><p class="text-slate-200 mb-1">الدور على:</p><h2 class="text-2xl font-bold">${game.player.name}</h2></div><p class="mb-4 opacity-80 font-bold">${game.data.singer}</p><div class="bg-white/20 p-8 rounded-3xl w-full mb-8 backdrop-blur-sm border border-white/30"><h2 class="text-2xl font-bold leading-relaxed mb-2">"${game.data.part}"</h2><div class="inline-block px-6 py-2 bg-black/20 rounded-lg mt-2 text-yellow-300 font-black text-2xl">${game.data.answer}</div></div><p class="text-lg text-purple-100 font-bold mb-4">مين اللي عرف الحل؟</p><div class="grid grid-cols-2 gap-3 w-full mb-4">${state.players.map(p => `<button onclick="lyricsPlayerWins(${p.id})" class="py-3 bg-white text-purple-700 rounded-xl font-bold text-lg shadow-lg hover:bg-purple-50">${p.name}</button>`).join('')}</div><button onclick="lyricsSkip()" class="w-full py-3 bg-slate-500 text-white rounded-xl font-bold mb-3">محدش عرف (تخطي)</button><button onclick="goHome()" class="w-full py-3 bg-purple-800 text-white rounded-xl font-bold">خروج</button></div>`; 
+        }
+
+        // --- UNSCRAMBLE ---
+        function scrambleWord(word) {
+            const letters = word.split('');
+            // Fisher-Yates shuffle
+            for (let i = letters.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [letters[i], letters[j]] = [letters[j], letters[i]];
+            }
+            return letters.join('');
+        }
+        function startUnscrambleGame() {
+            const item = getUniqueItem('unscramble', SCRAMBLE_DATA);
+            const scrambled = scrambleWord(item.word);
+            const player = getFairPlayer();
+            state.currentGame = { type: 'unscramble', phase: 'playing', category: item.category, word: item.word, scrambled, player, revealed: false };
+            playSound('click');
+            saveState();
+            render();
+        }
+        function revealUnscrambleAnswer() {
+            state.currentGame.revealed = true;
+            playSound('click');
+            render();
+        }
+        function unscramblePlayerWins(playerId) {
+            updateScore(playerId, false, 1);
+            startUnscrambleGame();
+        }
+        function unscrambleSkip() {
+            startUnscrambleGame();
+        }
+        function renderUnscrambleSetup() {
+            if (!state.currentGame || state.currentGame.type !== 'unscramble') return renderGameStartScreen('رتبها صح', 'كلمة حروفها متلخبطة بناءً على فئة معينة. حاول تعرف الكلمة وترتبها صح!', '🔀', 'ابدأ اللعبة', 'startUnscrambleGame()', 'bg-green-600');
+            const game = state.currentGame;
+            if (!game.revealed) {
+                return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-green-600 text-white text-center animate-in"><div class="text-center mb-4"><p class="text-slate-200 mb-1">الدور على:</p><h2 class="text-2xl font-bold">${game.player.name}</h2></div><div class="bg-white/20 p-6 rounded-2xl mb-6 w-full"><p class="text-sm opacity-75 mb-2">الفئة:</p><h3 class="text-2xl font-bold text-yellow-300">${game.category}</h3></div><div class="bg-white/20 p-8 rounded-3xl w-full mb-8 backdrop-blur-sm border border-white/30"><h1 class="text-5xl font-black text-yellow-300 tracking-widest">${game.scrambled}</h1></div><button onclick="revealUnscrambleAnswer()" class="w-full py-4 bg-white text-green-700 rounded-xl font-bold text-xl shadow-lg">إظهار الإجابة</button></div>`;
+            }
+            return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-green-600 text-white text-center animate-in"><div class="text-center mb-4"><p class="text-slate-200 mb-1">الدور على:</p><h2 class="text-2xl font-bold">${game.player.name}</h2></div><div class="bg-white/20 p-6 rounded-2xl mb-6 w-full"><p class="text-sm opacity-75 mb-2">الفئة:</p><h3 class="text-2xl font-bold text-yellow-300">${game.category}</h3></div><div class="bg-white/20 p-8 rounded-3xl w-full mb-8 backdrop-blur-sm border border-white/30"><h1 class="text-5xl font-black text-yellow-300 tracking-widest mb-4">${game.scrambled}</h1><div class="border-t border-white/30 pt-4"><p class="text-sm opacity-75 mb-2">الإجابة:</p><h2 class="text-4xl font-black text-green-200">${game.word}</h2></div></div><p class="text-lg text-green-100 font-bold mb-4">مين اللي عرف الحل؟</p><div class="grid grid-cols-2 gap-3 w-full mb-4">${state.players.map(p => `<button onclick="unscramblePlayerWins(${p.id})" class="py-3 bg-white text-green-700 rounded-xl font-bold text-lg shadow-lg hover:bg-green-50">${p.name}</button>`).join('')}</div><button onclick="unscrambleSkip()" class="w-full py-3 bg-slate-500 text-white rounded-xl font-bold mb-3">محدش عرف (تخطي)</button><button onclick="goHome()" class="w-full py-3 bg-green-800 text-white rounded-xl font-bold">خروج</button></div>`;
+        }
+
+        // --- SPY ---
+        function startSpyMix() {
+            // Combine all categories into one mixed array
+            const allWords = Object.values(SPY_CATEGORIES).flat();
+            // Shuffle using Fisher-Yates
+            for (let i = allWords.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allWords[i], allWords[j]] = [allWords[j], allWords[i]];
+            }
+            const word = getUniqueItem('spy_mix', allWords);
+            const spyIndex = Math.floor(Math.random() * state.players.length);
+            state.currentGame = { type: 'spy', phase: 'reveal', category: 'كوكتيل 🔀', word, spyIndex, currentPlayerIndex: 0, revealed: false, timeLeft: 120, votes: {}, votingPlayerIndex: 0 };
+            saveState();
+            render();
+        }
+        
+        function startSpyGame(cat) { const words = SPY_CATEGORIES[cat] || SPY_CATEGORIES['أماكن خروج']; const word = getUniqueItem('spy_' + cat, words); const spyIndex = Math.floor(Math.random() * state.players.length); state.currentGame = { type: 'spy', phase: 'reveal', category: cat, word, spyIndex, currentPlayerIndex: 0, revealed: false, timeLeft: 120, votes: {}, votingPlayerIndex: 0 }; saveState(); render(); }
+        function revealSpyWord() { state.currentGame.revealed = true; saveState(); render(); }
+        function nextSpyPlayer() { if(!state.currentGame.revealed) state.currentGame.revealed = true; else if(state.currentGame.currentPlayerIndex < state.players.length - 1) { state.currentGame.currentPlayerIndex++; state.currentGame.revealed = false; } else { state.currentGame.phase = 'discuss'; startSpyTimer(); } render(); }
+        function startSpyTimer() { if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); startSpyVoting(); } if (state.currentGame.timeLeft <= 10) playSound('tick'); saveState(); render(); }, 1000); }
+        function startSpyVoting() {
+            if (gameInterval) clearInterval(gameInterval);
+            state.currentGame.phase = 'voting';
+            state.currentGame.votingPlayerIndex = 0;
+            playSound('fail');
+            saveState();
+            render();
+        }
+        function voteForSpy(suspectedPlayerId) {
+            const voter = state.players[state.currentGame.votingPlayerIndex];
+            state.currentGame.votes[voter.id] = suspectedPlayerId;
+            if (state.currentGame.votingPlayerIndex < state.players.length - 1) {
+                state.currentGame.votingPlayerIndex++;
+                playSound('click');
+                render();
+            } else {
+                // Calculate results
+                const spyId = state.players[state.currentGame.spyIndex].id;
+                const voteCounts = {};
+                Object.values(state.currentGame.votes).forEach(votedId => {
+                    voteCounts[votedId] = (voteCounts[votedId] || 0) + 1;
+                });
+                
+                let spyFound = false;
+                if (Object.keys(voteCounts).length > 0) {
+                    const maxVotes = Math.max(...Object.values(voteCounts));
+                    const mostVoted = Object.keys(voteCounts).find(id => voteCounts[id] === maxVotes);
+                    if (mostVoted) {
+                        spyFound = parseInt(mostVoted) === spyId;
+                    }
+                }
+                
+                if (spyFound) {
+                    // All players except spy get +1
+                    state.players.forEach(p => {
+                        if (p.id !== spyId) updateScore(p.id, false, 1);
+                    });
+                } else {
+                    // Spy gets +2
+                    updateScore(spyId, false, 2);
+                }
+                
+                state.currentGame.spyFound = spyFound;
+                state.currentGame.phase = 'result';
+                playSound(spyFound ? 'success' : 'fail');
+                saveState();
+                render();
+            }
+        }
+        function restartSpyGame() { startSpyGame(state.currentGame.category); }
+        function renderSpySetup() { 
+            if(!state.currentGame || state.currentGame.type !== 'spy') {
+                const categories = Object.keys(SPY_CATEGORIES);
+                return `
+                    <div class="p-6 h-screen flex flex-col bg-indigo-50">
+                        ${header('🕵️ الجاسوس', 'home')}
+                        <div class="text-center mb-6">
+                            <div class="text-6xl mb-4">🕵️</div>
+                            <h3 class="font-bold text-indigo-800 mb-2">اختار الفئة:</h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start pb-32">
+                            ${categories.map(cat => `
+                                <button onclick="startSpyGame('${cat}')" class="w-full min-h-[80px] flex items-center justify-center py-6 rounded-2xl font-black text-xl shadow-md border-b-4 bg-white border-indigo-500 text-indigo-600 hover:bg-indigo-50 transition active:scale-95 text-center break-words leading-tight">
+                                    ${cat}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <button onclick="startSpyMix()" class="fixed bottom-6 left-4 right-4 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white font-black text-xl py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform z-50 flex justify-center items-center gap-2 active:scale-95">
+                            <span>🔀</span> كوكتيل كل الأقسام
+                        </button>
+                    </div>
+                `;
+            } 
+            const game = state.currentGame;
+            if(game.phase === 'reveal') { 
+                const p = state.players[game.currentPlayerIndex]; 
+                return `<div class="h-screen flex flex-col items-center justify-center bg-indigo-900 text-white p-6"><h1 class="text-3xl mb-8">${p.name}</h1><button onclick="revealSpyWord()" class="bg-indigo-700 p-8 rounded-xl mb-4 w-full h-48 flex items-center justify-center text-2xl font-bold border-4 border-indigo-500 shadow-2xl">${game.revealed ? (game.spyIndex === game.currentPlayerIndex ? '<div class="text-center"><div class="text-4xl mb-2">🕵️</div><div>أنت الجاسوس</div></div>' : `<div class="text-center"><div class="text-2xl mb-2">${game.word}</div></div>`) : 'دوس للكشف'}</button><button onclick="nextSpyPlayer()" class="w-full bg-yellow-500 text-black py-4 rounded-xl font-bold">التالي</button></div>`; 
+            } 
+            if(game.phase === 'discuss') {
+                return `<div class="h-screen flex flex-col p-6 bg-white"><h1 class="text-2xl font-bold text-center mt-10">ناقشوا واعرفوا الجاسوس!</h1><div class="text-6xl text-center mt-8 font-black text-indigo-600">${getTimer(game.timeLeft)}</div><button onclick="startSpyVoting()" class="mt-auto bg-red-600 text-white py-4 rounded-xl font-bold">ابدأ التصويت</button></div>`;
+            } 
+            if(game.phase === 'voting') {
+                const voter = state.players[game.votingPlayerIndex];
+                return `<div class="h-screen flex flex-col items-center justify-center bg-indigo-900 text-white p-6"><h1 class="text-3xl mb-4">${voter.name}</h1><p class="text-xl opacity-80 mb-8">مين الجاسوس في رأيك؟</p><div class="grid grid-cols-2 gap-3 w-full max-h-[60vh] overflow-y-auto">${state.players.map(p => `<button onclick="voteForSpy(${p.id})" class="py-4 bg-indigo-700 rounded-xl font-bold text-lg hover:bg-indigo-600 transition border-2 border-indigo-500">${p.name}</button>`).join('')}</div></div>`;
+            }
+            return `<div class="h-screen flex flex-col items-center justify-center bg-slate-900 text-white p-6 text-center"><div class="text-6xl mb-6">${game.spyFound ? '🎉' : '🕵️'}</div><h1 class="text-4xl mb-4 font-bold ${game.spyFound ? 'text-green-400' : 'text-red-400'}">${game.spyFound ? 'عرفوا الجاسوس!' : 'الجاسوس فلت!'}</h1><div class="bg-white/10 p-6 rounded-2xl mb-6 w-full"><p class="text-xl mb-2">الجاسوس كان:</p><h2 class="text-3xl font-black text-yellow-300">${state.players[game.spyIndex].name}</h2><p class="text-lg mt-4 opacity-80">الكلمة: ${game.word}</p></div><div class="mb-6"><p class="text-lg opacity-80">${game.spyFound ? 'كل اللاعبين (ماعدا الجاسوس) أخذوا +1 نقطة' : 'الجاسوس أخذ +2 نقطة'}</p></div><button onclick="restartSpyGame()" class="w-full py-4 bg-indigo-600 rounded-xl font-bold text-xl mb-3">جولة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-700 rounded-xl font-bold">خروج</button></div>`; 
+        }
+
+        // --- CHARADES ---
+        function startCharadesMix() {
+            // Combine all categories into one mixed array
+            const allWords = Object.values(CHARADES_DATA).flat();
+            // Shuffle using Fisher-Yates
+            for (let i = allWords.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allWords[i], allWords[j]] = [allWords[j], allWords[i]];
+            }
+            const word = getUniqueItem('charades_mix', allWords);
+            const actor = getFairPlayer();
+            state.currentGame = { type: 'charades', phase: 'prepare', category: 'كوكتيل 🔀', word, actor, revealed: false, timeLeft: 60 };
+            playSound('click');
+            render();
+        }
+        
+        function startCharadesGame(cat) { const words = CHARADES_DATA[cat]; const word = getUniqueItem('charades_' + cat, words); const actor = getFairPlayer(); state.currentGame = { type: 'charades', phase: 'prepare', category: cat, word, actor, revealed: false, timeLeft: 60 }; playSound('click'); render(); }
+        function startCharadesRound() { state.currentGame.phase = 'acting'; playSound('click'); saveState(); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = getTimer(state.currentGame.timeLeft); if(state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); charadesFail(); return; } if(state.currentGame.timeLeft <= 10) playSound('tick'); }, 1000); }
+        function charadesSuccess() { updateScore(state.currentGame.actor.id, false, 1); startCharadesGame(state.currentGame.category); }
+        function charadesFail() { if(state.daresEnabled) showDare(); startCharadesGame(state.currentGame.category); }
+        function renderCharadesSetup() { 
+            if (!state.currentGame || state.currentGame.type !== 'charades') { 
+                const categories = Object.keys(CHARADES_DATA); 
+                return `
+                    <div class="p-6 h-screen flex flex-col bg-rose-50">
+                        ${header('🎭 بدون كلام', 'home')}
+                        <div class="text-center mb-6">
+                            <div class="text-6xl mb-4">🎭</div>
+                            <h3 class="font-bold text-rose-800 mb-2">اختار الفئة:</h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start pb-32">
+                            ${categories.map(cat => `
+                                <button onclick="startCharadesGame('${cat}')" class="py-6 rounded-2xl font-black text-xl shadow-md border-b-4 bg-white border-rose-500 text-rose-600 hover:bg-rose-50 transition active:scale-95">
+                                    ${cat}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <button onclick="startCharadesMix()" class="fixed bottom-6 left-4 right-4 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white font-black text-xl py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform z-50 flex justify-center items-center gap-2 active:scale-95">
+                            <span>🔀</span> كوكتيل كل الأقسام
+                        </button>
+                    </div>
+                `; 
+            } 
+            const game = state.currentGame; 
+            if (game.phase === 'prepare') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-rose-600 text-white text-center animate-in"><p class="text-xl opacity-80 mb-2">الدور على</p><h1 class="text-4xl font-black mb-8">${game.actor.name}</h1><div class="bg-white/10 p-6 rounded-2xl border-2 border-white/20 w-full mb-8 relative overflow-hidden">${!game.revealed ? `<div onclick="state.currentGame.revealed = true; render()" class="absolute inset-0 bg-rose-800 z-10 flex items-center justify-center cursor-pointer hover:bg-rose-700 transition"><span class="text-xl font-bold animate-pulse">دوس عشان تشوف الكلمة</span></div>` : ''}<p class="text-sm mb-2 opacity-75">مطلوب تمثيل:</p><h2 class="text-3xl font-bold text-yellow-300">${game.word}</h2></div><button onclick="startCharadesRound()" class="w-full py-4 bg-white text-rose-700 rounded-xl font-bold text-xl">جاهز! ابدأ المؤقت</button></div>`; 
+            if (game.phase === 'acting') return `<div class="h-screen flex flex-col p-6 bg-white"><div class="text-center mt-4 mb-8"><p class="text-lg font-bold opacity-80">الممثل: <span class="text-rose-600">${game.actor.name}</span></p><h1 class="text-3xl font-black leading-relaxed text-center text-slate-800 mt-2">${game.word}</h1></div><div class="flex-1 flex flex-col justify-center items-center"><div class="text-8xl font-black text-rose-600" id="game-timer">${getTimer(game.timeLeft)}</div></div><div class="space-y-3"><button onclick="charadesSuccess()" class="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-xl shadow-lg">✓ عرفوها!</button><button onclick="charadesFail()" class="w-full py-3 bg-slate-200 text-slate-600 rounded-xl font-bold">معرفوش (تخطي)</button></div></div>`; 
+        }
+
+        // --- QUOTES ---
+        function startQuotesGame() { const quote = getUniqueItem('quotes', QUOTES_DATA); const reader = getFairPlayer(); state.currentGame = { type: 'quotes', phase: 'play', quote, reader, revealed: false }; playSound('click'); render(); }
+        function revealQuoteAnswer() { state.currentGame.phase = 'answer'; playSound('click'); render(); }
+        function quotePlayerWins(pid) { updateScore(pid, false, 1); startQuotesGame(); }
+        function nextQuoteRound() { startQuotesGame(); }
+        function renderQuotesSetup() { if (!state.currentGame || state.currentGame.type !== 'quotes') return renderGameStartScreen('الافيهات', 'واحد هيقرأ الافيه، والباقي لازم يخمن اسم الفيلم/المسرحية والممثل.', '🎬', 'ابدأ اللعب', 'startQuotesGame()', 'bg-emerald-600'); const game = state.currentGame; if (game.phase === 'play') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-emerald-700 text-white text-center animate-in"><p class="text-emerald-200 mb-2">الدور على: <span class="font-bold text-white text-lg">${game.reader.name}</span></p><div class="text-sm bg-black/20 px-3 py-1 rounded-full mb-8">اقرأ الافيه بصوت عالي</div><div class="relative mb-10 w-full">${!game.revealed ? `<div onclick="state.currentGame.revealed = true; render()" class="absolute inset-0 bg-emerald-800 z-10 rounded-xl flex items-center justify-center cursor-pointer hover:bg-emerald-900 transition h-32"><span class="text-xl font-bold animate-pulse">دوس عشان تشوف الافيه</span></div>` : `<div class="text-6xl absolute -top-8 -right-4 text-emerald-400 opacity-50">"</div><h2 class="text-3xl font-black leading-relaxed px-4">${game.quote.quote}</h2><div class="text-6xl absolute -bottom-12 -left-4 text-emerald-400 opacity-50">"</div>`}</div>${game.revealed ? `<button onclick="revealQuoteAnswer()" class="w-full py-4 bg-white text-emerald-800 rounded-xl font-bold text-xl shadow-lg mt-8">إظهار الإجابة</button>` : ''}</div>`; if (game.phase === 'answer') return `<div class="h-screen flex flex-col p-6 bg-white"><div class="text-center mt-8 mb-8 border-b-2 border-slate-100 pb-8"><h2 class="text-slate-500 mb-2">الافيه كان:</h2><p class="text-xl font-bold text-slate-800 mb-6">"${game.quote.quote}"</p><div class="space-y-2"><div class="inline-block px-4 py-2 bg-emerald-100 text-emerald-800 rounded-lg font-bold mx-1">🎬 ${game.quote.work}</div><div class="inline-block px-4 py-2 bg-amber-100 text-amber-800 rounded-lg font-bold mx-1">👤 ${game.quote.actor}</div></div></div><h3 class="text-center font-bold text-slate-700 mb-4">مين عرفها؟</h3><div class="grid grid-cols-2 gap-3 flex-1 overflow-y-auto pb-4">${state.players.map(p => `<button onclick="quotePlayerWins(${p.id})" class="p-3 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-slate-700 hover:bg-emerald-50 ${p.id === game.reader.id ? 'opacity-75' : ''}">${p.name}${p.id === game.reader.id ? ' (القارئ)' : ''}</button>`).join('')}</div><div class="mt-4 space-y-2"><button onclick="nextQuoteRound()" class="w-full py-3 bg-slate-800 text-white rounded-xl font-bold">محدش عرف (التالي)</button></div></div>`; }
+
+        // --- FIVE SECOND ---
+        function startFiveSecondGame() { const question = getUniqueItem('five_second', FIVE_SECOND_QUESTIONS); const player = getFairPlayer(); state.currentGame = { type: 'fivesecond', phase: 'prepare', question, player, revealed: false, timeLeft: 5 }; playSound('click'); render(); }
+        function startFiveSecondRound() { state.currentGame.phase = 'playing'; playSound('click'); saveState(); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = state.currentGame.timeLeft; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); fiveSecondFail(); return; } if (state.currentGame.timeLeft <= 5) playSound('tick'); }, 1000); }
+        function fiveSecondSuccess() { updateScore(state.currentGame.player.id, false, 1); startFiveSecondGame(); }
+        function fiveSecondFail() { if(state.daresEnabled) showDare(); startFiveSecondGame(); }
+        function renderFiveSecondSetup() { 
+            if (!state.currentGame || state.currentGame.type !== 'fivesecond') return renderGameStartScreen('خمسة عليك', 'اذكر ٣ أشياء في ٥ ثواني. لو نجحت تاخد نقطة، لو فشلت.. يا ويله!', '⏱️', 'ابدأ أول جولة', 'startFiveSecondGame()', 'bg-teal-600'); 
+            const game = state.currentGame; 
+            if (game.phase === 'prepare') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-teal-600 text-white text-center animate-in"><p class="text-xl opacity-80 mb-2">الدور على</p><h1 class="text-4xl font-black mb-8">${game.player.name}</h1><div class="bg-white/10 p-6 rounded-2xl border-2 border-white/20 w-full mb-8 relative overflow-hidden">${!game.revealed ? `<div onclick="state.currentGame.revealed = true; render()" class="absolute inset-0 bg-teal-800 z-10 flex items-center justify-center cursor-pointer hover:bg-teal-700 transition"><span class="text-xl font-bold animate-pulse">دوس عشان تشوف السؤال</span></div>` : ''}<p class="text-sm mb-2 opacity-75">مطلوب الإجابة على:</p><h2 class="text-3xl font-bold text-yellow-300">${game.question.text}</h2></div><button onclick="startFiveSecondRound()" class="w-full py-4 bg-white text-teal-700 rounded-xl font-bold text-xl" ${!game.revealed ? 'disabled opacity-50' : ''}>جاهز! ابدأ الجولة</button></div>`; 
+            if (game.phase === 'playing') return `<div class="h-screen flex flex-col p-6 bg-white"><div class="text-center mt-4 mb-8"><p class="text-lg font-bold opacity-80">اللاعب: <span class="text-teal-600">${game.player.name}</span></p><h1 class="text-3xl font-black leading-relaxed text-center text-slate-800 mt-2">${game.question.text}</h1></div><div class="flex-1 flex flex-col justify-center items-center"><div class="text-9xl font-black ${game.timeLeft <= 2 ? 'text-red-600 animate-pulse' : 'text-teal-600'}" id="game-timer">${game.timeLeft}</div></div><div class="space-y-3"><button onclick="fiveSecondSuccess()" class="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-xl shadow-lg">✓ أحسنت! (أجاب صح)</button><button onclick="fiveSecondFail()" class="w-full py-3 bg-red-500 text-white rounded-xl font-bold shadow-lg">💀 فشل! (عقوبة)</button></div></div>`; 
+        }
+
+        // --- BUS ---
+        function startBusGame() { 
+            const arabicLetters = ['أ', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي']; 
+            const category = getUniqueItem('bus_categories', BUS_CATEGORIES);
+            const letter = arabicLetters[Math.floor(Math.random() * arabicLetters.length)];
+            
+            state.currentGame = { type: 'bus', phase: 'ready', category, letter, playerIndex: 0, results: [], timeLeft: 10, lastCategory: category.name, lastLetter: letter }; 
+            playSound('click'); 
+            saveState();
+            render(); 
+        }
+        function startBusTimerNow() { state.currentGame.phase = 'playing'; playSound('click'); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = state.currentGame.timeLeft; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); busPlayerFail(); return; } if (state.currentGame.timeLeft <= 5) playSound('tick'); }, 1000); }
+        function generateNewBusRound() {
+            const arabicLetters = ['أ', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي'];
+            const lastCategory = state.currentGame.lastCategory;
+            const lastLetter = state.currentGame.lastLetter;
+            const currentPlayer = state.players[state.currentGame.playerIndex];
+            
+            let category, letter;
+            // If not first player and same player as last, avoid same category and letter
+            if (state.currentGame.playerIndex > 0 && lastCategory && lastLetter) {
+                const lastPlayer = state.players[state.currentGame.playerIndex - 1];
+                if (currentPlayer.id === lastPlayer.id) {
+                    let availableCategories = BUS_CATEGORIES.filter(c => c.name !== lastCategory);
+                    let availableLetters = arabicLetters.filter(l => l !== lastLetter);
+                    category = availableCategories.length > 0 ? availableCategories[Math.floor(Math.random() * availableCategories.length)] : BUS_CATEGORIES[Math.floor(Math.random() * BUS_CATEGORIES.length)];
+                    letter = availableLetters.length > 0 ? availableLetters[Math.floor(Math.random() * availableLetters.length)] : arabicLetters[Math.floor(Math.random() * arabicLetters.length)];
+                } else {
+                    category = BUS_CATEGORIES[Math.floor(Math.random() * BUS_CATEGORIES.length)];
+                    letter = arabicLetters[Math.floor(Math.random() * arabicLetters.length)];
+                }
+            } else {
+                category = BUS_CATEGORIES[Math.floor(Math.random() * BUS_CATEGORIES.length)];
+                letter = arabicLetters[Math.floor(Math.random() * arabicLetters.length)];
+            }
+            
+            state.currentGame.category = category;
+            state.currentGame.letter = letter;
+            state.currentGame.lastCategory = category.name;
+            state.currentGame.lastLetter = letter;
+        }
+        function busPlayerSuccess() { const player = state.players[state.currentGame.playerIndex]; state.currentGame.results.push({ player, success: true }); updateScore(player.id, false, 1); if (state.currentGame.playerIndex < state.players.length - 1) { state.currentGame.playerIndex++; generateNewBusRound(); state.currentGame.timeLeft = 10; state.currentGame.phase = 'ready'; playSound('success'); saveState(); render(); } else { state.currentGame.phase = 'result'; playSound('success'); saveState(); render(); } }
+        function busPlayerFail() { const player = state.players[state.currentGame.playerIndex]; state.currentGame.results.push({ player, success: false }); if (state.currentGame.playerIndex < state.players.length - 1) { state.currentGame.playerIndex++; generateNewBusRound(); state.currentGame.timeLeft = 10; state.currentGame.phase = 'ready'; playSound('fail'); saveState(); render(); } else { state.currentGame.phase = 'result'; playSound('fail'); saveState(); render(); } }
+        function nextBusRound() { startBusGame(); }
+        function renderBusSetup() { if (!state.currentGame || state.currentGame.type !== 'bus') return renderGameStartScreen('أوتوبيس كومبليت', 'كل جولة تظهر فئة والحرف الأول. في ١٠ ثواني كل لاعب يقول كلمة تبدأ بالحرف. لو نجحتوا كلكم +١ لكل ناجح!', '🚌', 'ابدأ اللعبة', 'startBusGame()', 'bg-purple-600'); const game = state.currentGame; if (game.phase === 'ready') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-purple-600 text-white text-center animate-in"><div class="text-2xl opacity-80 mb-2">الدور على:</div><div class="text-5xl font-bold mb-10">${state.players[game.playerIndex].name}</div><div onclick="startBusTimerNow()" class="w-40 h-40 bg-purple-500 rounded-full flex items-center justify-center cursor-pointer shadow-lg animate-pulse hover:scale-105 transition border-4 border-white/20"><span class="text-2xl font-bold">دوس<br>عشان تبدأ</span></div></div>`; if (game.phase === 'playing') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-purple-600 text-white text-center"><div class="bg-white/20 p-6 rounded-3xl mb-8 w-full"><div class="text-sm opacity-80 mb-2">الفئة</div><div class="text-4xl font-black mb-4">${game.category.name}</div><div class="text-sm opacity-80 mb-2">الحرف</div><div class="text-6xl font-black text-yellow-300">${game.letter}</div></div><div class="mb-6"><div class="text-lg opacity-90 mb-2">الدور على:</div><div class="text-3xl font-bold">${state.players[game.playerIndex].name}</div></div><div class="text-7xl font-black mb-8" id="game-timer">${game.timeLeft}</div><div class="grid grid-cols-2 gap-3 w-full"><button onclick="busPlayerSuccess()" class="py-3 bg-green-500 rounded-xl font-bold">✓ نجح</button><button onclick="busPlayerFail()" class="py-3 bg-red-500 rounded-xl font-bold">✗ فشل</button></div></div>`; if (game.phase === 'result') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-purple-900 text-white text-center"><h2 class="text-3xl font-bold mb-6">نتيجة الجولة!</h2><div class="bg-white/10 p-6 rounded-2xl w-full mb-8">${game.results.map(r => `<div class="flex justify-between items-center py-2 border-b border-white/20"><span>${r.player.name}</span><span class="text-2xl">${r.success ? '✓' : '✗'}</span></div>`).join('')}</div><button onclick="nextBusRound()" class="w-full py-4 bg-purple-500 rounded-xl font-bold text-xl">جولة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-700 rounded-xl font-bold mt-3">خروج</button></div>`; }
+
+        // --- LIAR ---
+        function startLiarGame() { const card = getUniqueItem('liar', LIAR_CARDS); const player = getFairPlayer(); state.currentGame = { type: 'liar', phase: 'ready', card, player, selectedFact: null, timeLeft: 15 }; playSound('click'); render(); }
+        function startLiarTimerNow() { state.currentGame.phase = 'reading'; playSound('click'); saveState(); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = state.currentGame.timeLeft; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); if (state.currentGame.selectedFact !== null) revealLiarCard(); } if (state.currentGame.timeLeft <= 5) playSound('tick'); }, 1000); }
+        function selectLiarFact(index) { state.currentGame.selectedFact = index; playSound('click'); render(); }
+        function revealLiarCard() { state.currentGame.phase = 'result'; playSound('click'); saveState(); render(); }
+        function liarGameAddPoint() { const p = getFairPlayer(); updateScore(p.id, false, 1); nextLiarRound(); }
+        function nextLiarRound() { startLiarGame(); }
+        function renderLiarSetup() { if (!state.currentGame || state.currentGame.type !== 'liar') return renderGameStartScreen('الكارت الكداب', 'كل كارت فيه ٣ حقائق، لكن واحدة كذبة. امسك الكذبة في ١٥ ثانية!', '🃏', 'ابدأ اللعبة', 'startLiarGame()', 'bg-orange-600'); const game = state.currentGame; if (game.phase === 'ready') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-orange-600 text-white text-center animate-in"><p class="text-xl opacity-80 mb-2">الدور على</p><h1 class="text-4xl font-black mb-6">${game.player.name}</h1><div class="text-6xl mb-6">🃏</div><h2 class="text-3xl font-bold mb-8">جاهز يا بطل؟</h2><p class="text-xl opacity-90 mb-10">هديك الموبايل.. اقرأ الـ 3 حقائق بسرعة!</p><div onclick="startLiarTimerNow()" class="w-full py-6 bg-white text-orange-700 rounded-2xl font-black text-2xl shadow-xl cursor-pointer hover:bg-orange-50 transition">دوس عشان تشوف الكارت<br><span class="text-sm font-normal text-slate-500">(العداد هيبدأ فوراً!)</span></div></div>`; if (game.phase === 'reading') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-orange-600 text-white text-center"><div class="text-center mb-4"><p class="text-slate-200 mb-1">الدور على:</p><h2 class="text-2xl font-bold">${game.player.name}</h2></div><h2 class="text-3xl font-bold mb-6">${game.card.topic}</h2><div class="bg-white/20 p-6 rounded-2xl w-full mb-8 space-y-4">${game.card.facts.map((fact, i) => `<button onclick="selectLiarFact(${i})" class="w-full p-4 bg-white/10 hover:bg-white/30 rounded-xl text-right ${game.selectedFact === i ? 'ring-4 ring-yellow-300' : ''}"><span class="font-bold">${i + 1}.</span> ${fact}</button>`).join('')}</div><div class="text-5xl font-black mb-6" id="game-timer">${game.timeLeft}</div><button onclick="revealLiarCard()" class="w-full py-4 bg-white text-orange-700 rounded-xl font-bold text-xl" ${game.selectedFact === null ? 'disabled opacity-50' : ''}>كشف الإجابة</button></div>`; if (game.phase === 'result') { const lieIndex = 2; const isCorrect = game.selectedFact === lieIndex; return `<div class="h-screen flex flex-col items-center justify-center p-6 ${isCorrect ? 'bg-green-600' : 'bg-red-600'} text-white text-center animate-in"><div class="text-6xl mb-6">${isCorrect ? '✓' : '✗'}</div><h2 class="text-3xl font-bold mb-4">${isCorrect ? 'صح! أحسنت!' : 'غلط!'}</h2><p class="text-xl mb-8">الكذبة كانت: "${game.card.facts[lieIndex]}"</p>${isCorrect ? `<button onclick="updateScore(${game.player.id}, false, 1); nextLiarRound()" class="w-full py-3 bg-white/20 rounded-xl font-bold mb-3">+١ نقطة</button>` : state.daresEnabled ? `<button onclick="showDare()" class="w-full py-3 bg-white/20 rounded-xl font-bold mb-3">💀 عقاب</button>` : ''}<button onclick="nextLiarRound()" class="w-full py-4 bg-white text-orange-700 rounded-xl font-bold">جولة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-800 rounded-xl font-bold mt-3">خروج</button></div>`; } }
+
+        // --- AUCTION ---
+        function startAuctionGame() { const category = getUniqueItem('auction', AUCTION_CATEGORIES); state.currentGame = { type: 'auction', phase: 'bidding', category, currentBid: 1, timeLeft: 30 }; playSound('click'); render(); }
+        function raiseBid() { state.currentGame.currentBid++; playSound('click'); render(); }
+        function auctionPass() { state.currentGame.phase = 'select_winner'; state.currentGame.finalBid = state.currentGame.currentBid; playSound('click'); saveState(); render(); }
+        function selectAuctionWinner(playerId) { state.currentGame.winnerId = playerId; state.currentGame.phase = 'answering_ready'; state.currentGame.timeLeft = 30; playSound('click'); render(); }
+        function startAuctionTimerNow() { state.currentGame.phase = 'answering'; playSound('click'); saveState(); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = state.currentGame.timeLeft; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); auctionFail(); return; } if (state.currentGame.timeLeft <= 10) playSound('tick'); }, 1000); }
+        function auctionSuccess() { updateScore(state.currentGame.winnerId, false, state.currentGame.finalBid); startAuctionGame(); }
+        function auctionFail() { if (state.daresEnabled) showDare(); startAuctionGame(); }
+        function renderAuctionSetup() { if (!state.currentGame || state.currentGame.type !== 'auction') return renderGameStartScreen('المزاد', 'الفريق يراهن على عدد الإجابات اللي يقدر يقولها. المزاد للأعلى، والفريق الفايز لازم ينفذ!', '🔨', 'ابدأ اللعبة', 'startAuctionGame()', 'bg-cyan-600'); const game = state.currentGame; if (game.phase === 'bidding') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-cyan-600 text-white text-center"><div class="bg-white/20 p-6 rounded-2xl mb-8 w-full"><div class="text-sm opacity-80 mb-2">الفئة:</div><h2 class="text-3xl font-bold">${game.category.name}</h2></div><div class="text-lg opacity-90 mb-4">أعلى رقم مزاد:</div><div class="text-8xl font-black text-yellow-300 mb-8">${game.currentBid}</div><div class="grid grid-cols-2 gap-3 w-full"><button onclick="raiseBid()" class="py-4 bg-white/20 rounded-xl font-bold text-xl">+١ علي</button><button onclick="auctionPass()" class="py-4 bg-red-500 rounded-xl font-bold text-xl">باس!</button></div></div>`; if (game.phase === 'select_winner') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-cyan-600 text-white text-center animate-in"><div class="text-6xl mb-6">🔨</div><h2 class="text-3xl font-bold mb-4">المزاد خلص!</h2><p class="text-xl opacity-90 mb-2">مطلوب <span class="font-black text-yellow-300 text-2xl">${game.finalBid}</span> إجابة</p><p class="text-lg mb-6 mt-6">مين رسى عليه المزاد؟</p><div class="grid grid-cols-2 gap-3 w-full max-h-[50vh] overflow-y-auto">${state.players.map(p => `<button onclick="selectAuctionWinner(${p.id})" class="py-4 bg-white/20 rounded-xl font-bold text-lg hover:bg-white/30 transition">${p.name}</button>`).join('')}</div></div>`; if (game.phase === 'answering_ready') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-cyan-600 text-white text-center animate-in"><div class="text-6xl mb-6">🔨</div><h2 class="text-3xl font-bold mb-4">جاهزين؟</h2><p class="text-xl opacity-90 mb-2">الفائز: <span class="font-black text-yellow-300">${state.players.find(p => p.id === game.winnerId)?.name}</span></p><p class="text-lg opacity-80 mb-4">مطلوب <span class="font-black text-yellow-300 text-2xl">${game.finalBid}</span> إجابة</p><div onclick="startAuctionTimerNow()" class="w-full py-6 mt-8 bg-white text-cyan-700 rounded-2xl font-black text-2xl shadow-xl cursor-pointer hover:bg-cyan-50 transition">دوس عشان تبدأ العداد</div></div>`; if (game.phase === 'answering') return `<div class="h-screen flex flex-col p-6 bg-cyan-50"><div class="text-center mt-8 mb-8"><h2 class="text-cyan-700 text-lg">الفئة: <span class="font-bold">${game.category.name}</span></h2><div class="text-5xl font-black text-cyan-600 mt-4">لازم ${game.finalBid} إجابة!</div></div><div class="flex-1 flex justify-center items-center"><div class="text-8xl font-black text-cyan-600" id="game-timer">${game.timeLeft}</div></div><div class="space-y-3"><button onclick="auctionSuccess()" class="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-xl">✓ نجح!</button><button onclick="auctionFail()" class="w-full py-3 bg-red-500 text-white rounded-xl font-bold">✗ فشل!</button></div></div>`; }
+
+        // --- GIBBERISH ---
+        function startGibberishGame() { 
+            const phrase = getUniqueItem('gibberish', GIBBERISH_DATA);
+            const player = getFairPlayer();
+            state.currentGame = { type: 'gibberish', phase: 'ready', phrase, player, timeLeft: 30 }; 
+            playSound('click'); 
+            saveState();
+            render(); 
+        }
+        function startGibberishTimerNow() { state.currentGame.phase = 'playing'; playSound('click'); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = state.currentGame.timeLeft; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); revealGibberishAnswer(); } if (state.currentGame.timeLeft <= 10) playSound('tick'); }, 1000); }
+        function revealGibberishAnswer() { state.currentGame.phase = 'answer'; playSound('click'); saveState(); render(); }
+        function nextGibberishRound() { startGibberishGame(); }
+        function renderGibberishSetup() { if (!state.currentGame || state.currentGame.type !== 'gibberish') return renderGameStartScreen('فك الشفرة', 'جمل غريبة! اقرأها بصوت عالي كذا مرة لحد ما تفهم المعنى الحقيقي!', '🗣️', 'ابدأ اللعبة', 'startGibberishGame()', 'bg-pink-600'); const game = state.currentGame; if (game.phase === 'ready') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-pink-600 text-white text-center animate-in"><p class="text-xl opacity-80 mb-2">الدور على</p><h1 class="text-4xl font-black mb-8">${game.player.name}</h1><div class="text-6xl mb-6">🗣️</div><h2 class="text-3xl font-bold mb-8">جاهز تفك الشفرة؟</h2><div onclick="startGibberishTimerNow()" class="w-full py-6 bg-white text-pink-700 rounded-2xl font-black text-2xl shadow-xl cursor-pointer hover:bg-pink-50 transition">دوس عشان تبدأ<br><span class="text-sm font-normal text-slate-500">(العداد هيبدأ فوراً!)</span></div></div>`; if (game.phase === 'playing') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-pink-600 text-white text-center"><div class="text-center mb-4"><p class="text-slate-200 mb-1">الدور على:</p><h2 class="text-2xl font-bold">${game.player.name}</h2></div><div class="text-sm opacity-80 mb-4">اقرأها بصوت عالي!</div><div class="bg-white/20 p-8 rounded-3xl mb-8"><h1 class="text-4xl font-black">${game.phrase.gibberish}</h1></div><div class="text-6xl font-black mb-8" id="game-timer">${game.timeLeft}</div><button onclick="revealGibberishAnswer()" class="w-full py-4 bg-white text-pink-700 rounded-xl font-bold text-xl">إظهار الإجابة</button></div>`; if (game.phase === 'answer') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-pink-900 text-white text-center"><div class="bg-white/10 p-6 rounded-2xl mb-8"><div class="text-sm opacity-80 mb-2">كانت:</div><div class="text-2xl font-bold mb-4">${game.phrase.gibberish}</div><div class="text-sm opacity-80 mb-2">الإجابة:</div><div class="text-3xl font-black text-yellow-300">${game.phrase.answer}</div></div><button onclick="nextGibberishRound()" class="w-full py-4 bg-pink-500 rounded-xl font-bold text-xl mb-3">جولة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-700 rounded-xl font-bold">خروج</button></div>`; }
+
+        // --- HUM ---
+        function startHumGame() { const song = getUniqueItem('hum', HUM_SONGS); const player = getFairPlayer(); state.currentGame = { type: 'hum', phase: 'prepare', song, player, revealed: false, timeLeft: 45 }; playSound('click'); saveState(); render(); }
+        function startHumRound() { state.currentGame.phase = 'humming'; playSound('click'); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = state.currentGame.timeLeft; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); humFail(); return; } if (state.currentGame.timeLeft <= 10) playSound('tick'); }, 1000); }
+        function humSuccess() { updateScore(state.currentGame.player.id, false, 1); startHumGame(); }
+        function humFail() { if (state.daresEnabled) showDare(); startHumGame(); }
+        function renderHumSetup() { if (!state.currentGame || state.currentGame.type !== 'hum') return renderGameStartScreen('طربني شكراً', 'همهم اللحن بس! ممنوع الكلمات. "تو تو رو تو" فقط!', '🎵', 'ابدأ اللعبة', 'startHumGame()', 'bg-yellow-600'); const game = state.currentGame; if (game.phase === 'prepare') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-yellow-600 text-white text-center"><p class="text-xl opacity-80 mb-2">الدور على</p><h1 class="text-4xl font-black mb-8">${game.player.name}</h1><div class="bg-white/10 p-6 rounded-2xl border-2 border-white/20 w-full mb-8 relative overflow-hidden">${!game.revealed ? `<div onclick="state.currentGame.revealed = true; render()" class="absolute inset-0 bg-yellow-700 z-10 flex items-center justify-center cursor-pointer hover:bg-yellow-800 transition"><span class="text-xl font-bold animate-pulse">دوس عشان تشوف الأغنية</span></div>` : ''}<p class="text-sm mb-2 opacity-75">الأغنية:</p><h2 class="text-3xl font-bold text-yellow-300">${game.song.song}</h2><p class="text-sm mt-2 opacity-75">الصعوبة: ${game.song.difficulty}</p></div><button onclick="startHumRound()" class="w-full py-4 bg-white text-yellow-700 rounded-xl font-bold text-xl" ${!game.revealed ? 'disabled opacity-50' : ''}>ابدأ الهمهمة!</button></div>`; if (game.phase === 'humming') return `<div class="h-screen flex flex-col p-6 bg-yellow-50"><div class="text-center mt-8 mb-8"><h2 class="text-slate-500">المهمهم: <span class="font-bold text-yellow-700">${game.player.name}</span></h2><h1 class="text-3xl font-black text-slate-800 mt-2">${game.song.song}</h1></div><div class="flex-1 flex justify-center items-center"><div class="text-8xl font-black text-yellow-600" id="game-timer">${game.timeLeft}</div></div><div class="space-y-3"><button onclick="humSuccess()" class="w-full py-4 bg-green-500 text-white rounded-xl font-bold text-xl">✓ عرفوها!</button><button onclick="humFail()" class="w-full py-3 bg-slate-200 text-slate-600 rounded-xl font-bold">معرفوش</button></div></div>`; }
+
+        // --- LIKELY ---
+        function startLikelyGame() { const question = getUniqueItem('likely', MOST_LIKELY); state.currentGame = { type: 'likely', phase: 'ready', question, timeLeft: 5 }; playSound('click'); saveState(); render(); }
+        function startLikelyTimerNow() { state.currentGame.phase = 'showing'; playSound('click'); saveState(); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = state.currentGame.timeLeft; if (state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); state.currentGame.phase = 'result'; playSound('fail'); saveState(); render(); } else if (state.currentGame.timeLeft <= 5) playSound('tick'); }, 1000); }
+        function likelySelectPlayer(playerId) { if (state.daresEnabled) showDare(); nextLikelyRound(); }
+        function nextLikelyRound() { startLikelyGame(); }
+        function renderLikelySetup() { if (!state.currentGame || state.currentGame.type !== 'likely') return renderGameStartScreen('مين الكارثة؟', 'سؤال يظهر. في ٥ ثواني كلكم تشاوروا على نفس الشخص. اللي الكل شاور عليه.. عقاب!', '👉', 'ابدأ اللعبة', 'startLikelyGame()', 'bg-red-600'); const game = state.currentGame; if (game.phase === 'ready') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-red-600 text-white text-center animate-in"><div class="text-6xl mb-6">👉</div><h2 class="text-3xl font-bold mb-8">جاهزين؟</h2><div onclick="startLikelyTimerNow()" class="w-full py-6 bg-white text-red-700 rounded-2xl font-black text-2xl shadow-xl cursor-pointer hover:bg-red-50 transition">دوس عشان تشوف السؤال<br><span class="text-sm font-normal text-slate-500">(5 ثواني بس!)</span></div></div>`; if (game.phase === 'showing') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-red-600 text-white text-center"><div class="bg-white/20 p-8 rounded-3xl mb-8 w-full"><h1 class="text-3xl font-black leading-relaxed">${game.question}</h1></div><div class="text-8xl font-black mb-8" id="game-timer">${game.timeLeft}</div><p class="text-xl opacity-90">شاوروا دلوقتي! 👉</p></div>`; if (game.phase === 'result') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-red-900 text-white text-center"><div class="bg-white/10 p-6 rounded-2xl mb-6 w-full"><h3 class="text-sm opacity-75 mb-2">السؤال كان:</h3><h1 class="text-2xl font-black leading-relaxed">${game.question}</h1></div><h2 class="text-3xl font-bold mb-8">اتفقوا على مين؟</h2><div class="grid grid-cols-2 gap-3 w-full mb-8">${state.players.map(p => `<button onclick="likelySelectPlayer(${p.id})" class="p-4 bg-white/20 rounded-xl font-bold hover:bg-white/30">${p.name}</button>`).join('')}</div><button onclick="nextLikelyRound()" class="w-full py-3 bg-red-500 rounded-xl font-bold">جولة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-700 rounded-xl font-bold mt-3">خروج</button></div>`; }
+
+        // Update mute button appearance based on state (Glass Bar Design)
+        function updateMuteButton() {
+            const btn = document.getElementById('muteBtn');
+            if (btn) {
+                if (state.isMuted) {
+                    btn.className = 'w-10 h-10 flex items-center justify-center rounded-full bg-red-500/60 hover:scale-110 hover:bg-red-500/80 transition-all shadow-sm text-white';
+                    btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>';
+                } else {
+                    btn.className = 'w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:scale-110 hover:bg-white/70 transition-all shadow-sm text-gray-800';
+                    btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+                }
+            }
+        }
+        
+        // ===== INIT =====
+        // Auto-load on page load using DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
+            loadState(); // Load saved state from localStorage (includes players array)
+            render(); // Trigger render to display the loaded data
+            updateMuteButton(); // Update mute button appearance
+        });
+    </script>
+</body>
+</html>
