@@ -119,12 +119,15 @@
         <div class="max-w-md mx-auto min-h-screen shadow-2xl bg-white/95 backdrop-blur-sm relative overflow-hidden border-x-2 border-slate-100 flex flex-col">
             <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-rose-500 via-amber-400 to-indigo-500 z-50"></div>
             
-            <!-- Global Controls -->
-            <div class="absolute top-4 left-4 z-50 flex flex-col gap-2">
-                <button onclick="toggleMute()" id="muteBtn" class="p-2 bg-white rounded-full shadow-md text-slate-600 hover:bg-slate-50 transition">
+            <!-- Global Controls - Vertical Glass Bar -->
+            <div id="control-bar" class="fixed top-4 left-4 z-50 flex flex-col items-center bg-white/25 backdrop-blur-lg border border-white/30 shadow-lg rounded-full p-2 gap-2 transition-all hover:bg-white/35">
+                <!-- Sound Button (Top) -->
+                <button onclick="toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:scale-110 hover:bg-white/70 transition-all shadow-sm text-gray-800">
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
                 </button>
-                <button onclick="goHome()" class="p-2 bg-white rounded-full shadow-md text-slate-600 hover:bg-slate-50 transition">
+                
+                <!-- Home Button (Bottom) -->
+                <button onclick="goHome()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:scale-110 hover:bg-white/70 transition-all shadow-sm text-gray-800">
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                 </button>
             </div>
@@ -1376,7 +1379,7 @@
             if (!state.currentGame || state.currentGame.type !== 'taboo') return renderGameStartScreen('أوعى تقولها', 'اشرح الكلمة اللي فوق من غير ما تقول أي كلمة من الممنوعات اللي تحتها!', '🚫', 'ابدأ التحدي', 'startTabooGame()', 'bg-rose-900');
             const game = state.currentGame;
             if (game.phase === 'prepare') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-rose-900 text-white text-center animate-in"><p class="text-xl opacity-80 mb-2">الدور على</p><h1 class="text-4xl font-black mb-8">${game.player.name}</h1><div class="bg-white/10 p-6 rounded-2xl border-2 border-white/20 w-full mb-8 relative overflow-hidden">${!game.revealed ? `<div onclick="state.currentGame.revealed = true; render()" class="absolute inset-0 bg-rose-950 z-10 flex items-center justify-center cursor-pointer hover:bg-rose-900 transition"><span class="text-xl font-bold animate-pulse">دوس عشان تشوف الكلمة</span></div>` : ''}<p class="text-sm mb-2 opacity-75">الكلمة المطلوبة:</p><h2 class="text-3xl font-bold text-yellow-300">${game.card.word}</h2></div><button onclick="startTabooRound()" class="w-full py-4 bg-white text-rose-900 rounded-xl font-bold text-xl" ${!game.revealed ? 'disabled opacity-50' : ''}>جاهز! ابدأ</button></div>`;
-            if (game.phase === 'playing') return `<div class="h-screen flex flex-col p-6 bg-white"><div class="text-center mb-4"><p class="text-lg font-bold opacity-80">الدور على: <span class="text-rose-600">${game.player.name}</span></p></div><div class="text-center flex justify-between items-center mb-6"><div class="text-xl font-bold text-rose-900">النقاط: ${game.score}</div><div class="text-3xl font-black text-rose-600" id="game-timer">${getTimer(game.timeLeft)}</div></div><div class="flex-1 flex flex-col justify-center items-center"><div class="w-full bg-rose-50 border-2 border-rose-200 rounded-2xl p-6 text-center mb-4"><h1 class="text-3xl font-black leading-relaxed text-center text-rose-900 mb-6">${game.card.word}</h1><div class="bg-white rounded-xl p-4 shadow-inner"><p class="text-sm text-red-500 font-bold mb-3">🚫 ممنوع تقول:</p>${game.card.taboo.map(t => `<div class="text-lg font-bold text-slate-700 border-b border-slate-100 last:border-0 py-1">${t}</div>`).join('')}</div></div></div><div class="grid grid-cols-3 gap-2 h-20"><button onclick="tabooFail()" class="bg-red-600 text-white rounded-xl font-bold text-lg">غلطة</button><button onclick="tabooSkip()" class="bg-slate-500 text-white rounded-xl font-bold text-lg">تخطي</button><button onclick="tabooCorrect()" class="bg-green-600 text-white rounded-xl font-bold text-lg">صح</button></div></div>`;
+            if (game.phase === 'playing') return `<div class="h-screen flex flex-col p-6 bg-white"><div class="text-center mb-4"><p class="text-lg font-bold opacity-80">الدور على: <span class="text-rose-600">${game.player.name}</span></p></div><div class="relative mb-6"><div class="absolute left-0 top-1/2 -translate-y-1/2 text-xl font-bold text-rose-900">النقاط: ${game.score}</div><div class="text-center"><div class="inline-block text-3xl font-black text-rose-600 px-4 py-1 bg-rose-50 rounded-full" id="game-timer">${getTimer(game.timeLeft)}</div></div></div><div class="flex-1 flex flex-col justify-center items-center"><div class="w-full bg-rose-50 border-2 border-rose-200 rounded-2xl p-6 text-center mb-4"><h1 class="text-3xl font-black leading-relaxed text-center text-rose-900 mb-6">${game.card.word}</h1><div class="bg-white rounded-xl p-4 shadow-inner"><p class="text-sm text-red-500 font-bold mb-3">🚫 ممنوع تقول:</p>${game.card.taboo.map(t => `<div class="text-lg font-bold text-slate-700 border-b border-slate-100 last:border-0 py-1">${t}</div>`).join('')}</div></div></div><div class="grid grid-cols-3 gap-2 h-20"><button onclick="tabooFail()" class="bg-red-600 text-white rounded-xl font-bold text-lg">غلطة</button><button onclick="tabooSkip()" class="bg-slate-500 text-white rounded-xl font-bold text-lg">تخطي</button><button onclick="tabooCorrect()" class="bg-green-600 text-white rounded-xl font-bold text-lg">صح</button></div></div>`;
             if (game.phase === 'result') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-rose-900 text-white text-center"><h2 class="text-3xl font-bold mb-4">خلص الوقت!</h2><div class="text-6xl font-black text-yellow-300 mb-4">${game.score}</div><p class="text-xl mb-8">نقطة</p><button onclick="startTabooGame()" class="w-full py-4 bg-rose-700 rounded-xl font-bold text-xl mb-3">جولة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-800 rounded-xl font-bold">خروج</button></div>`;
         }
 
@@ -1653,13 +1656,23 @@
                             <div class="text-6xl mb-4">🤯</div>
                             <h3 class="font-bold text-blue-800 mb-2">اختار القسم:</h3>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start">
-                            ${categories.map(cat => `
+                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start pb-32">
+                            ${categories.map(cat => {
+                                // Format category name: put text in parentheses on new line with smaller/lighter text
+                                let displayName = cat;
+                                if (cat.includes('(')) {
+                                    displayName = cat.replace('(', '<br/><span class="text-sm opacity-90">(') + '</span>';
+                                }
+                                return `
                                 <button onclick="startHeadsUpGame('${cat}')" class="w-full min-h-[80px] flex items-center justify-center py-6 rounded-2xl font-black text-xl shadow-md border-b-4 bg-white border-blue-500 text-blue-600 hover:bg-blue-50 transition active:scale-95 text-center break-words leading-tight">
-                                    ${cat}
+                                    ${displayName}
                                 </button>
-                            `).join('')}
+                            `;
+                            }).join('')}
                         </div>
+                        <button onclick="startHeadsUpMix()" class="fixed bottom-6 left-4 right-4 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white font-black text-xl py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform z-50 flex justify-center items-center gap-2 active:scale-95">
+                            <span>🔀</span> كوكتيل كل الأقسام
+                        </button>
                     </div>
                 `;
             }
@@ -1687,7 +1700,7 @@
                     <div class="h-screen flex flex-col p-4 bg-blue-600">
                         <!-- Header -->
                         <div class="flex justify-between items-center mb-4 text-white">
-                            <div class="font-bold text-lg">${game.currentPlayer.name}</div>
+                            <div class="font-bold text-lg ml-14">${game.currentPlayer.name}</div>
                             <div class="text-4xl font-black text-yellow-300" id="hu-timer">${game.timeLeft}</div>
                             <button onclick="goHome()" class="bg-red-500/80 px-4 py-1 rounded-lg text-sm">إنهاء</button>
                         </div>
@@ -1754,6 +1767,21 @@
         }
 
         // ================== OTHER GAMES ==================
+        function startEmojiMix() {
+            // Combine all categories into one mixed array
+            const allItems = Object.values(EMOJI_QUIZ_DATA).flat();
+            // Shuffle using Fisher-Yates
+            for (let i = allItems.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allItems[i], allItems[j]] = [allItems[j], allItems[i]];
+            }
+            const roundData = getUniqueItem('emoji_mix', allItems);
+            state.currentGame = { type: 'emoji', phase: 'playing', category: 'كوكتيل 🔀', data: roundData, revealed: false }; 
+            playSound('click'); 
+            saveState();
+            render();
+        }
+        
         function startEmojiGame(category) {
             const categoryData = EMOJI_QUIZ_DATA[category] || EMOJI_QUIZ_DATA['أفلام عربي'];
             const roundData = getUniqueItem('emoji_' + category, categoryData);
@@ -1780,13 +1808,16 @@
                             <div class="text-6xl mb-4">🧩</div>
                             <h3 class="font-bold text-yellow-800 mb-2">اختار الفئة:</h3>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start">
+                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start pb-32">
                             ${categories.map(cat => `
                                 <button onclick="startEmojiGame('${cat}')" class="py-6 rounded-2xl font-black text-xl shadow-md border-b-4 bg-white border-yellow-500 text-yellow-600 hover:bg-yellow-50 transition active:scale-95">
                                     ${cat}
                                 </button>
                             `).join('')}
                         </div>
+                        <button onclick="startEmojiMix()" class="fixed bottom-6 left-4 right-4 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white font-black text-xl py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform z-50 flex justify-center items-center gap-2 active:scale-95">
+                            <span>🔀</span> كوكتيل كل الأقسام
+                        </button>
                     </div>
                 `;
             }
@@ -1873,6 +1904,21 @@
         }
 
         // --- SPY ---
+        function startSpyMix() {
+            // Combine all categories into one mixed array
+            const allWords = Object.values(SPY_CATEGORIES).flat();
+            // Shuffle using Fisher-Yates
+            for (let i = allWords.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allWords[i], allWords[j]] = [allWords[j], allWords[i]];
+            }
+            const word = getUniqueItem('spy_mix', allWords);
+            const spyIndex = Math.floor(Math.random() * state.players.length);
+            state.currentGame = { type: 'spy', phase: 'reveal', category: 'كوكتيل 🔀', word, spyIndex, currentPlayerIndex: 0, revealed: false, timeLeft: 120, votes: {}, votingPlayerIndex: 0 };
+            saveState();
+            render();
+        }
+        
         function startSpyGame(cat) { const words = SPY_CATEGORIES[cat] || SPY_CATEGORIES['أماكن خروج']; const word = getUniqueItem('spy_' + cat, words); const spyIndex = Math.floor(Math.random() * state.players.length); state.currentGame = { type: 'spy', phase: 'reveal', category: cat, word, spyIndex, currentPlayerIndex: 0, revealed: false, timeLeft: 120, votes: {}, votingPlayerIndex: 0 }; saveState(); render(); }
         function revealSpyWord() { state.currentGame.revealed = true; saveState(); render(); }
         function nextSpyPlayer() { if(!state.currentGame.revealed) state.currentGame.revealed = true; else if(state.currentGame.currentPlayerIndex < state.players.length - 1) { state.currentGame.currentPlayerIndex++; state.currentGame.revealed = false; } else { state.currentGame.phase = 'discuss'; startSpyTimer(); } render(); }
@@ -1937,13 +1983,16 @@
                             <div class="text-6xl mb-4">🕵️</div>
                             <h3 class="font-bold text-indigo-800 mb-2">اختار الفئة:</h3>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start">
+                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start pb-32">
                             ${categories.map(cat => `
                                 <button onclick="startSpyGame('${cat}')" class="w-full min-h-[80px] flex items-center justify-center py-6 rounded-2xl font-black text-xl shadow-md border-b-4 bg-white border-indigo-500 text-indigo-600 hover:bg-indigo-50 transition active:scale-95 text-center break-words leading-tight">
                                     ${cat}
                                 </button>
                             `).join('')}
                         </div>
+                        <button onclick="startSpyMix()" class="fixed bottom-6 left-4 right-4 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white font-black text-xl py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform z-50 flex justify-center items-center gap-2 active:scale-95">
+                            <span>🔀</span> كوكتيل كل الأقسام
+                        </button>
                     </div>
                 `;
             } 
@@ -1963,6 +2012,21 @@
         }
 
         // --- CHARADES ---
+        function startCharadesMix() {
+            // Combine all categories into one mixed array
+            const allWords = Object.values(CHARADES_DATA).flat();
+            // Shuffle using Fisher-Yates
+            for (let i = allWords.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allWords[i], allWords[j]] = [allWords[j], allWords[i]];
+            }
+            const word = getUniqueItem('charades_mix', allWords);
+            const actor = getFairPlayer();
+            state.currentGame = { type: 'charades', phase: 'prepare', category: 'كوكتيل 🔀', word, actor, revealed: false, timeLeft: 60 };
+            playSound('click');
+            render();
+        }
+        
         function startCharadesGame(cat) { const words = CHARADES_DATA[cat]; const word = getUniqueItem('charades_' + cat, words); const actor = getFairPlayer(); state.currentGame = { type: 'charades', phase: 'prepare', category: cat, word, actor, revealed: false, timeLeft: 60 }; playSound('click'); render(); }
         function startCharadesRound() { state.currentGame.phase = 'acting'; playSound('click'); saveState(); render(); if (gameInterval) clearInterval(gameInterval); gameInterval = setInterval(() => { state.currentGame.timeLeft--; const t = document.getElementById('game-timer'); if(t) t.innerText = getTimer(state.currentGame.timeLeft); if(state.currentGame.timeLeft <= 0) { clearInterval(gameInterval); charadesFail(); return; } if(state.currentGame.timeLeft <= 10) playSound('tick'); }, 1000); }
         function charadesSuccess() { updateScore(state.currentGame.actor.id, false, 1); startCharadesGame(state.currentGame.category); }
@@ -1977,13 +2041,16 @@
                             <div class="text-6xl mb-4">🎭</div>
                             <h3 class="font-bold text-rose-800 mb-2">اختار الفئة:</h3>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start">
+                        <div class="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start pb-32">
                             ${categories.map(cat => `
                                 <button onclick="startCharadesGame('${cat}')" class="py-6 rounded-2xl font-black text-xl shadow-md border-b-4 bg-white border-rose-500 text-rose-600 hover:bg-rose-50 transition active:scale-95">
                                     ${cat}
                                 </button>
                             `).join('')}
                         </div>
+                        <button onclick="startCharadesMix()" class="fixed bottom-6 left-4 right-4 bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white font-black text-xl py-4 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform z-50 flex justify-center items-center gap-2 active:scale-95">
+                            <span>🔀</span> كوكتيل كل الأقسام
+                        </button>
                     </div>
                 `; 
             } 
@@ -2104,15 +2171,15 @@
         function nextLikelyRound() { startLikelyGame(); }
         function renderLikelySetup() { if (!state.currentGame || state.currentGame.type !== 'likely') return renderGameStartScreen('مين الكارثة؟', 'سؤال يظهر. في ٥ ثواني كلكم تشاوروا على نفس الشخص. اللي الكل شاور عليه.. عقاب!', '👉', 'ابدأ اللعبة', 'startLikelyGame()', 'bg-red-600'); const game = state.currentGame; if (game.phase === 'ready') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-red-600 text-white text-center animate-in"><div class="text-6xl mb-6">👉</div><h2 class="text-3xl font-bold mb-8">جاهزين؟</h2><div onclick="startLikelyTimerNow()" class="w-full py-6 bg-white text-red-700 rounded-2xl font-black text-2xl shadow-xl cursor-pointer hover:bg-red-50 transition">دوس عشان تشوف السؤال<br><span class="text-sm font-normal text-slate-500">(5 ثواني بس!)</span></div></div>`; if (game.phase === 'showing') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-red-600 text-white text-center"><div class="bg-white/20 p-8 rounded-3xl mb-8 w-full"><h1 class="text-3xl font-black leading-relaxed">${game.question}</h1></div><div class="text-8xl font-black mb-8" id="game-timer">${game.timeLeft}</div><p class="text-xl opacity-90">شاوروا دلوقتي! 👉</p></div>`; if (game.phase === 'result') return `<div class="h-screen flex flex-col items-center justify-center p-6 bg-red-900 text-white text-center"><div class="bg-white/10 p-6 rounded-2xl mb-6 w-full"><h3 class="text-sm opacity-75 mb-2">السؤال كان:</h3><h1 class="text-2xl font-black leading-relaxed">${game.question}</h1></div><h2 class="text-3xl font-bold mb-8">اتفقوا على مين؟</h2><div class="grid grid-cols-2 gap-3 w-full mb-8">${state.players.map(p => `<button onclick="likelySelectPlayer(${p.id})" class="p-4 bg-white/20 rounded-xl font-bold hover:bg-white/30">${p.name}</button>`).join('')}</div><button onclick="nextLikelyRound()" class="w-full py-3 bg-red-500 rounded-xl font-bold">جولة جديدة</button><button onclick="goHome()" class="w-full py-3 bg-slate-700 rounded-xl font-bold mt-3">خروج</button></div>`; }
 
-        // Update mute button appearance based on state
+        // Update mute button appearance based on state (Glass Bar Design)
         function updateMuteButton() {
             const btn = document.getElementById('muteBtn');
             if (btn) {
                 if (state.isMuted) {
-                    btn.className = 'p-2 bg-red-100 rounded-full shadow-md text-red-500 hover:bg-red-200 transition';
+                    btn.className = 'w-10 h-10 flex items-center justify-center rounded-full bg-red-500/60 hover:scale-110 hover:bg-red-500/80 transition-all shadow-sm text-white';
                     btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>';
                 } else {
-                    btn.className = 'p-2 bg-white rounded-full shadow-md text-slate-600 hover:bg-slate-50 transition';
+                    btn.className = 'w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:scale-110 hover:bg-white/70 transition-all shadow-sm text-gray-800';
                     btn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
                 }
             }
