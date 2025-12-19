@@ -294,77 +294,154 @@
 
         // Random Game Selector
         function surpriseMe() {
-            // Define all games with their colors
-            const allGames = [
-                {id: 'lawyer_setup', name: 'المحامي اللعين', emoji: '👨‍⚖️', color: 'bg-slate-700'},
-                {id: 'indian_setup', name: 'سيناريو هندي', emoji: '🎬', color: 'bg-orange-600'},
-                {id: 'bomb_setup', name: 'القنبلة', emoji: '💣', color: 'bg-red-700'},
-                {id: 'taboo_setup', name: 'أوعى تقولها', emoji: '🚫', color: 'bg-rose-900'},
-                {id: 'story_setup', name: 'حكاية في كلمتين', emoji: '📖', color: 'bg-amber-600'},
-                {id: 'artist_setup', name: 'الرسام الأعمى', emoji: '🎨', color: 'bg-fuchsia-600'},
-                {id: 'morph_setup', name: 'الكلمة المتحولة', emoji: '🔤', color: 'bg-cyan-700'},
-                {id: 'whisper_setup', name: 'إقرأ شفايفي', emoji: '🎧', color: 'bg-pink-500'},
-                {id: 'debate_setup', name: 'محكمة', emoji: '⚖️', color: 'bg-amber-700'},
-                {id: 'never_setup', name: 'أنا عمري ما', emoji: '✋', color: 'bg-rose-800'},
-                {id: 'heads_up_setup', name: 'على راسي', emoji: '🤯', color: 'bg-blue-600'},
-                {id: 'emoji_setup', name: 'فك الإيموجي', emoji: '🧩', color: 'bg-yellow-500'},
-                {id: 'lyrics_setup', name: 'كمل الأغنية', emoji: '🎤', color: 'bg-purple-500'},
-                {id: 'unscramble_setup', name: 'رتبها صح', emoji: '🔀', color: 'bg-green-600'},
-                {id: 'five_second_setup', name: 'خمسة عليك', emoji: '⏱️', color: 'bg-teal-600'},
-                {id: 'spy_setup', name: 'الجاسوس', emoji: '🕵️', color: 'bg-indigo-600'},
-                {id: 'charades_setup', name: 'بدون كلام', emoji: '🎭', color: 'bg-rose-600'},
-                {id: 'quotes_setup', name: 'الافيهات', emoji: '🎬', color: 'bg-emerald-600'},
-                {id: 'bus_setup', name: 'أوتوبيس', emoji: '🚌', color: 'bg-purple-600'},
-                {id: 'liar_setup', name: 'الكداب', emoji: '🃏', color: 'bg-orange-600'},
-                {id: 'auction_setup', name: 'المزاد', emoji: '🔨', color: 'bg-cyan-600'},
-                {id: 'gibberish_setup', name: 'فك الشفرة', emoji: '🗣️', color: 'bg-pink-600'},
-                {id: 'hum_setup', name: 'طربني', emoji: '🎵', color: 'bg-yellow-600'},
-                {id: 'likely_setup', name: 'مين الكارثة', emoji: '👉', color: 'bg-red-600'}
-            ];
+            // DYNAMIC GAME DISCOVERY: Query the DOM for actual game buttons
+            const gameButtons = document.querySelectorAll('button[onclick*="navigate("]');
+            const allGames = [];
             
-            // Pick the winner
-            const winner = allGames[Math.floor(Math.random() * allGames.length)];
+            gameButtons.forEach(button => {
+                try {
+                    // Extract game ID from onclick attribute
+                    const onclickAttr = button.getAttribute('onclick');
+                    const match = onclickAttr.match(/navigate\(['"]([^'"]+)['"]\)/);
+                    
+                    if (!match) return;
+                    const gameId = match[1];
+                    
+                    // Skip non-game screens (players, scores, etc.)
+                    if (!gameId.includes('_setup')) return;
+                    
+                    // Extract emoji from the button (first div with large text)
+                    const emojiDiv = button.querySelector('div.text-5xl, div[style*="font-size: 40px"]');
+                    const emoji = emojiDiv ? emojiDiv.textContent.trim() : '🎮';
+                    
+                    // Extract title (look for the bold text/span)
+                    const titleSpan = button.querySelector('span.text-lg, span[style*="font-weight: bold"]');
+                    const name = titleSpan ? titleSpan.textContent.trim() : gameId;
+                    
+                    // Extract color from button classes
+                    const classList = button.className;
+                    const colorMatch = classList.match(/(bg-[a-z]+-\d+)/);
+                    const color = colorMatch ? colorMatch[1] : 'bg-slate-700';
+                    
+                    allGames.push({
+                        id: gameId,
+                        name: name,
+                        emoji: emoji,
+                        color: color
+                    });
+                } catch (e) {
+                    console.warn('Failed to parse game button:', e);
+                }
+            });
             
-            // Shuffle and pick 9 games for the grid (ensure winner is included)
-            const shuffled = [...allGames].sort(() => Math.random() - 0.5);
-            let gridGames = shuffled.slice(0, 9);
-            
-            // Ensure winner is in the grid
-            if (!gridGames.find(g => g.id === winner.id)) {
-                gridGames[Math.floor(Math.random() * 9)] = winner;
+            // Ensure we have games
+            if (allGames.length === 0) {
+                console.error('No valid games found in DOM!');
+                return;
             }
             
-            // Create overlay with backdrop blur
+            console.log('✅ Discovered games:', allGames.length, allGames.map(g => g.id));
+            
+            // Fisher-Yates shuffle for true randomness
+            function shuffleArray(array) {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
+            
+            // Pick the winner FIRST
+            const winner = allGames[Math.floor(Math.random() * allGames.length)];
+            console.log('🎯 Winner selected:', winner.id, winner.name);
+            
+            // Shuffle and pick 9 UNIQUE games for the grid
+            const shuffled = shuffleArray(allGames);
+            let gridGames = [];
+            
+            // Add winner first
+            gridGames.push(winner);
+            
+            // Add 8 more unique games (different from winner)
+            for (let i = 0; i < shuffled.length && gridGames.length < 9; i++) {
+                if (shuffled[i].id !== winner.id) {
+                    gridGames.push(shuffled[i]);
+                }
+            }
+            
+            // Final shuffle of the grid so winner isn't always first
+            gridGames = shuffleArray(gridGames);
+            
+            console.log('📋 Grid games:', gridGames.map(g => g.id));
+            
+            // Create lightweight overlay (solid background, no blur)
             const overlay = document.createElement('div');
-            overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-md';
-            overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-            overlay.style.animation = 'fadeIn 0.3s ease-out';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(255, 255, 255, 0.95);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.3s ease-out;
+            `;
             
             // Create container
             const container = document.createElement('div');
-            container.className = 'flex flex-col items-center gap-6 p-6';
+            container.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 24px;
+                padding: 24px;
+            `;
             
             // Add title
             const title = document.createElement('div');
-            title.className = 'text-3xl font-black text-slate-800 text-center';
-            title.innerHTML = '🎲 فاجئني 🎲';
+            title.style.cssText = `
+                font-size: 28px;
+                font-weight: 900;
+                color: #1e293b;
+                text-align: center;
+            `;
+            title.textContent = '🎲 فاجئني 🎲';
             container.appendChild(title);
             
             // Create 3x3 grid
             const grid = document.createElement('div');
-            grid.className = 'grid grid-cols-3 gap-3';
-            grid.style.width = '320px';
+            grid.style.cssText = `
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                width: 320px;
+            `;
             
-            // Create game cards
+            // Create game cards with lightweight styling
             gridGames.forEach((game, index) => {
                 const card = document.createElement('div');
-                card.className = `${game.color} rounded-2xl shadow-lg text-white flex flex-col items-center justify-center transition-all duration-200`;
-                card.style.width = '100px';
-                card.style.height = '100px';
+                card.className = `roulette-card ${game.color}`;
+                card.style.cssText = `
+                    width: 100px;
+                    height: 100px;
+                    border-radius: 16px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    border: 4px solid transparent;
+                    transition: border-color 0.15s ease;
+                `;
                 card.dataset.index = index;
                 card.innerHTML = `
-                    <div class="text-4xl mb-1">${game.emoji}</div>
-                    <div class="text-xs font-bold text-center px-2 leading-tight">${game.name}</div>
+                    <div style="font-size: 40px; margin-bottom: 4px;">${game.emoji}</div>
+                    <div style="font-size: 12px; font-weight: bold; text-align: center; padding: 0 8px; line-height: 1.2;">${game.name}</div>
                 `;
                 grid.appendChild(card);
             });
@@ -373,72 +450,68 @@
             
             // Result text (hidden initially)
             const resultText = document.createElement('div');
-            resultText.className = 'text-2xl font-bold text-slate-800 text-center opacity-0 transition-opacity duration-300';
-            resultText.style.minHeight = '32px';
+            resultText.style.cssText = `
+                font-size: 22px;
+                font-weight: bold;
+                color: #1e293b;
+                text-align: center;
+                min-height: 32px;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
             container.appendChild(resultText);
             
             overlay.appendChild(container);
             document.body.appendChild(overlay);
             
-            // Add fade animations to head
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes fadeOut {
-                    from { opacity: 1; }
-                    to { opacity: 0; }
-                }
-            `;
-            document.head.appendChild(style);
+            // Trigger fade-in
+            requestAnimationFrame(() => {
+                overlay.style.opacity = '1';
+            });
             
-            // Roulette animation logic
-            let currentIndex = 0;
-            let delay = 50; // Start fast
-            const maxDelay = 400; // End slow
+            // Roulette animation logic (optimized)
+            let currentIndex = -1;
             let iterations = 0;
-            const totalIterations = 40; // Total jumps
+            const totalIterations = 20; // Reduced for better performance
+            const startDelay = 100; // Start at 100ms (not faster)
+            const maxDelay = 300; // End at 300ms
             
-            const cards = grid.querySelectorAll('div[data-index]');
+            const cards = grid.querySelectorAll('.roulette-card');
             const winnerIndex = gridGames.findIndex(g => g.id === winner.id);
             
-            function highlightCard(index) {
-                // Remove highlight from all
+            function setActiveCard(index) {
+                // Remove active state from all cards (lightweight operation)
                 cards.forEach(card => {
-                    card.style.transform = 'scale(1)';
-                    card.style.boxShadow = '';
-                    card.style.border = '';
-                    card.style.zIndex = '0';
+                    card.style.borderColor = 'transparent';
+                    card.style.backgroundColor = '';
                 });
                 
-                // Add highlight to current
-                const card = cards[index];
-                card.style.transform = 'scale(1.1)';
-                card.style.boxShadow = '0 0 0 4px white, 0 8px 30px rgba(0, 0, 0, 0.3)';
-                card.style.zIndex = '10';
-                
-                // Play tick sound
-                if (iterations < totalIterations - 5) {
-                    playTone(600, 'square', 0.05);
+                // Add active state to current card (simple border change only)
+                if (index >= 0) {
+                    const card = cards[index];
+                    card.style.borderColor = '#fcd34d'; // Yellow border
+                    card.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                    
+                    // Play tick sound (only if not near end)
+                    if (iterations < totalIterations - 3) {
+                        playTone(700, 'sine', 0.03);
+                    }
                 }
             }
             
             function animate() {
-                highlightCard(currentIndex);
                 iterations++;
                 
-                // Calculate next delay (exponential slowdown)
+                // Calculate delay with linear slowdown (simpler math)
                 const progress = iterations / totalIterations;
-                delay = 50 + (maxDelay - 50) * Math.pow(progress, 2);
+                const delay = startDelay + (maxDelay - startDelay) * progress;
                 
                 // Decide next index
-                if (iterations < totalIterations - 5) {
+                if (iterations < totalIterations - 3) {
                     // Random jump
                     currentIndex = Math.floor(Math.random() * 9);
                 } else if (iterations < totalIterations) {
-                    // Last few jumps, move towards winner
+                    // Last few jumps, hover near winner
                     const neighbors = [
                         winnerIndex,
                         (winnerIndex + 1) % 9,
@@ -452,17 +525,35 @@
                     return;
                 }
                 
+                setActiveCard(currentIndex);
                 setTimeout(animate, delay);
             }
             
             function stopAnimation() {
-                // Final highlight
-                highlightCard(winnerIndex);
+                // Final highlight on winner
+                setActiveCard(winnerIndex);
                 
-                // Winner effects
+                // Winner effects (lightweight)
                 setTimeout(() => {
                     const winnerCard = cards[winnerIndex];
-                    winnerCard.style.boxShadow = '0 0 0 6px white, 0 0 40px rgba(255, 215, 0, 0.8)';
+                    
+                    // Simple flash effect (toggle border thickness)
+                    let flashCount = 0;
+                    const flashInterval = setInterval(() => {
+                        if (flashCount % 2 === 0) {
+                            winnerCard.style.borderWidth = '6px';
+                            winnerCard.style.borderColor = '#fbbf24';
+                        } else {
+                            winnerCard.style.borderWidth = '4px';
+                            winnerCard.style.borderColor = '#fcd34d';
+                        }
+                        flashCount++;
+                        if (flashCount >= 6) {
+                            clearInterval(flashInterval);
+                            winnerCard.style.borderWidth = '6px';
+                            winnerCard.style.borderColor = '#fbbf24';
+                        }
+                    }, 150);
                     
                     // Play success sound
                     playSound('correct');
@@ -476,10 +567,21 @@
                     
                     // Navigate after delay
                     setTimeout(() => {
-                        overlay.style.animation = 'fadeOut 0.3s ease-out';
+                        overlay.style.opacity = '0';
                         setTimeout(() => {
                             document.body.removeChild(overlay);
-                            document.head.removeChild(style);
+                            
+                            // ROBUST NAVIGATION: Verify winner ID before navigating
+                            console.log('🚀 Navigating to winner:', winner.id, '(' + winner.name + ')');
+                            
+                            // Double-check the ID is valid
+                            if (!winner.id || !winner.id.includes('_setup')) {
+                                console.error('❌ Invalid winner ID:', winner.id);
+                                navigate('home');
+                                return;
+                            }
+                            
+                            // Navigate using the exact ID extracted from DOM
                             navigate(winner.id);
                         }, 300);
                     }, 1000);
@@ -489,7 +591,7 @@
             // Start animation after brief delay
             setTimeout(() => {
                 animate();
-            }, 300);
+            }, 400);
         }
 
         // Create floating +1 animation
