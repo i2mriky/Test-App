@@ -21,9 +21,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="gameData.js"></script>
     <style>
-        * { font-family: 'Cairo', sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        * { 
+            font-family: 'Cairo', sans-serif; 
+            touch-action: manipulation; 
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
         
-        /* ⚠️ CRITICAL: iOS PWA Fix - Prevent Elastic Scroll / Rubber-banding */
+        /* ⚠️ CRITICAL: Mobile PWA Fix - Lock Viewport & Stop Elastic Scroll */
         html, body {
             height: 100%;
             width: 100%;
@@ -31,22 +36,37 @@
             padding: 0;
             overflow: hidden; /* Stops whole page from scrolling */
             overscroll-behavior: none; /* Prevents pull-to-refresh */
-            position: fixed; /* Locks body in place on iOS */
+            position: fixed; /* Locks body in place to prevent clip/bounce */
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             user-select: none;
+            background-color: #f8f9fa;
         }
         
         body {
-            background-color: #f8f9fa;
             background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px), radial-gradient(#cbd5e1 1.5px, #f8f9fa 1.5px);
             background-size: 24px 24px;
             background-position: 0 0, 12px 12px;
         }
         
-        /* Lock #app container */
+        /* Lock #app container - CRITICAL for preventing white area at bottom */
         #app {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             height: 100%;
             width: 100%;
             overflow: hidden;
+        }
+        
+        /* Ensure smooth internal scrolling on mobile */
+        .scroll-container {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
         }
         
         /* Page Transitions - Snappy Entry Animation */
@@ -941,7 +961,7 @@
                         <span>فاجئني! (لعبة عشوائية)</span>
                     </button>
                     
-                    <div class="w-full grid grid-cols-2 gap-3 flex-1 overflow-y-auto pb-2 content-start min-h-0">
+                    <div class="w-full grid grid-cols-2 gap-3 flex-1 overflow-y-auto pb-2 content-start min-h-0 scroll-container">
                         ${menuButton('lawyer_setup', '👨‍⚖️', 'المحامي اللعين', 'دافع عن المصيبة', 'bg-slate-700')}
                         ${menuButton('indian_setup', '🎬', 'سيناريو هندي', 'تمثيل وأوفرة', 'bg-orange-600')}
                         ${menuButton('bomb_setup', '💣', 'القنبلة', 'باصي بسرعة', 'bg-red-700')}
