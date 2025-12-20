@@ -48,6 +48,11 @@
             background: transparent; 
         }
         
+        /* Smooth iOS scrolling for scroll containers */
+        .scroll-container {
+            -webkit-overflow-scrolling: touch;
+        }
+        
         /* Page Transitions - Snappy Entry Animation */
         @keyframes slideIn {
             from { 
@@ -929,50 +934,55 @@
 
         function renderHome() {
             return `
-                <div class="flex flex-col h-screen p-4">
-                    <div class="text-center pt-8 pb-4">
+                <div class="flex flex-col h-full w-full bg-slate-50 relative">
+                    
+                    <div class="text-center pb-4 px-4 shrink-0 z-10 w-full" style="padding-top: calc(2rem + env(safe-area-inset-top));">
                         <h1 class="text-4xl font-black text-slate-800 mb-1">لعبة القعدة</h1>
                         <p class="text-slate-500 font-medium">اللمة متحلاش غير بيها</p>
                     </div>
                     
-                    <button onclick="surpriseMe()" class="w-full py-4 mb-4 surprise-gradient text-white rounded-2xl font-black text-xl shadow-xl transition transform active:scale-95 hover:scale-[1.02] flex items-center justify-center gap-3">
-                        <span class="text-3xl">🎲</span>
-                        <span>فاجئني! (لعبة عشوائية)</span>
-                    </button>
-                    
-                    <div class="w-full grid grid-cols-2 gap-3 flex-1 overflow-y-auto pb-2 content-start min-h-0">
-                        ${menuButton('lawyer_setup', '👨‍⚖️', 'المحامي اللعين', 'دافع عن المصيبة', 'bg-slate-700')}
-                        ${menuButton('indian_setup', '🎬', 'سيناريو هندي', 'تمثيل وأوفرة', 'bg-orange-600')}
-                        ${menuButton('bomb_setup', '💣', 'القنبلة', 'باصي بسرعة', 'bg-red-700')}
-                        ${menuButton('taboo_setup', '🚫', 'أوعى تقولها', 'ممنوعات كتير', 'bg-rose-900')}
-                        ${menuButton('story_setup', '📖', 'حكاية في كلمتين', 'ألفوا قصة', 'bg-amber-600')}
-                        ${menuButton('artist_setup', '🎨', 'الرسام الأعمى', 'ارسم وخمن', 'bg-fuchsia-600')}
-                        ${menuButton('morph_setup', '🔤', 'الكلمة المتحولة', 'غير حرف', 'bg-cyan-700')}
-                        ${menuButton('whisper_setup', '🎧', 'إقرأ شفايفي', 'علي الصوت', 'bg-pink-500')}
-                        ${menuButton('debate_setup', '⚖️', 'محكمة', 'إقناع وجدال', 'bg-amber-700')}
-                        ${menuButton('never_setup', '✋', 'أنا عمري ما', 'مين عمل؟', 'bg-rose-800')}
-                        ${menuButton('heads_up_setup', '🤯', 'على راسي', 'حط موبايلك', 'bg-blue-600')}
-                        ${menuButton('emoji_setup', '🧩', 'فك الإيموجي', 'اسم الفيلم؟', 'bg-yellow-500')}
-                        ${menuButton('lyrics_setup', '🎤', 'كمل الأغنية', 'حافظ؟', 'bg-purple-500')}
-                        ${menuButton('unscramble_setup', '🔀', 'رتبها صح', 'كلمة متلخبطة', 'bg-green-600')}
-                        ${menuButton('five_second_setup', '⏱️', 'خمسة عليك', '3 حاجات', 'bg-teal-600')}
-                        ${menuButton('spy_setup', '🕵️', 'الجاسوس', 'مين الغريب؟', 'bg-indigo-600')}
-                        ${menuButton('charades_setup', '🎭', 'بدون كلام', 'تمثيل', 'bg-rose-600')}
-                        ${menuButton('quotes_setup', '🎬', 'الافيهات', 'سمّع', 'bg-emerald-600')}
-                        ${menuButton('bus_setup', '🚌', 'أوتوبيس', 'حرف وفئة', 'bg-purple-600')}
-                        ${menuButton('liar_setup', '🃏', 'الكداب', 'امسك الكذبة', 'bg-orange-600')}
-                        ${menuButton('auction_setup', '🔨', 'المزاد', 'مين يزود', 'bg-cyan-600')}
-                        ${menuButton('gibberish_setup', '🗣️', 'فك الشفرة', 'كلام غريب', 'bg-pink-600')}
-                        ${menuButton('hum_setup', '🎵', 'طربني', 'همهمة', 'bg-yellow-600')}
-                        ${menuButton('likely_setup', '👉', 'مين الكارثة', 'توقعات', 'bg-red-600')}
+                    <div class="px-4 mb-2 shrink-0 z-10">
+                        <button onclick="surpriseMe()" class="w-full py-4 surprise-gradient text-white rounded-2xl font-black text-xl shadow-xl transition transform active:scale-95 flex items-center justify-center gap-3">
+                            <span class="text-3xl">🎲</span>
+                            <span>فاجئني! (لعبة عشوائية)</span>
+                        </button>
                     </div>
                     
-                    <div class="flex gap-3 w-full mt-2">
-                        <button onclick="navigate('players')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2">
+                    <div class="flex-1 w-full overflow-y-auto scroll-container px-4 pb-4">
+                        <div class="grid grid-cols-2 gap-3 pb-2">
+                            ${menuButton('lawyer_setup', '👨‍⚖️', 'المحامي اللعين', 'دافع عن المصيبة', 'bg-slate-700')}
+                            ${menuButton('indian_setup', '🎬', 'سيناريو هندي', 'تمثيل وأوفرة', 'bg-orange-600')}
+                            ${menuButton('bomb_setup', '💣', 'القنبلة', 'باصي بسرعة', 'bg-red-700')}
+                            ${menuButton('taboo_setup', '🚫', 'أوعى تقولها', 'ممنوعات كتير', 'bg-rose-900')}
+                            ${menuButton('story_setup', '📖', 'حكاية في كلمتين', 'ألفوا قصة', 'bg-amber-600')}
+                            ${menuButton('artist_setup', '🎨', 'الرسام الأعمى', 'ارسم وخمن', 'bg-fuchsia-600')}
+                            ${menuButton('morph_setup', '🔤', 'الكلمة المتحولة', 'غير حرف', 'bg-cyan-700')}
+                            ${menuButton('whisper_setup', '🎧', 'إقرأ شفايفي', 'علي الصوت', 'bg-pink-500')}
+                            ${menuButton('debate_setup', '⚖️', 'محكمة', 'إقناع وجدال', 'bg-amber-700')}
+                            ${menuButton('never_setup', '✋', 'أنا عمري ما', 'مين عمل؟', 'bg-rose-800')}
+                            ${menuButton('heads_up_setup', '🤯', 'على راسي', 'حط موبايلك', 'bg-blue-600')}
+                            ${menuButton('emoji_setup', '🧩', 'فك الإيموجي', 'اسم الفيلم؟', 'bg-yellow-500')}
+                            ${menuButton('lyrics_setup', '🎤', 'كمل الأغنية', 'حافظ؟', 'bg-purple-500')}
+                            ${menuButton('unscramble_setup', '🔀', 'رتبها صح', 'كلمة متلخبطة', 'bg-green-600')}
+                            ${menuButton('five_second_setup', '⏱️', 'خمسة عليك', '3 حاجات', 'bg-teal-600')}
+                            ${menuButton('spy_setup', '🕵️', 'الجاسوس', 'مين الغريب؟', 'bg-indigo-600')}
+                            ${menuButton('charades_setup', '🎭', 'بدون كلام', 'تمثيل', 'bg-rose-600')}
+                            ${menuButton('quotes_setup', '🎬', 'الافيهات', 'سمّع', 'bg-emerald-600')}
+                            ${menuButton('bus_setup', '🚌', 'أوتوبيس', 'حرف وفئة', 'bg-purple-600')}
+                            ${menuButton('liar_setup', '🃏', 'الكداب', 'امسك الكذبة', 'bg-orange-600')}
+                            ${menuButton('auction_setup', '🔨', 'المزاد', 'مين يزود', 'bg-cyan-600')}
+                            ${menuButton('gibberish_setup', '🗣️', 'فك الشفرة', 'كلام غريب', 'bg-pink-600')}
+                            ${menuButton('hum_setup', '🎵', 'طربني', 'همهمة', 'bg-yellow-600')}
+                            ${menuButton('likely_setup', '👉', 'مين الكارثة', 'توقعات', 'bg-red-600')}
+                        </div>
+                    </div>
+                    
+                    <div class="shrink-0 flex gap-3 w-full p-4 pt-2 bg-slate-50 border-t border-slate-200 z-20 relative" style="padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));">
+                        <button onclick="navigate('players')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2 shadow-sm active:scale-95 transition">
                             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                             اللاعبين
                         </button>
-                        <button onclick="navigate('scores')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2">
+                        <button onclick="navigate('scores')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2 shadow-sm active:scale-95 transition">
                             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
                             النتائج
                         </button>
