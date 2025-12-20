@@ -23,9 +23,16 @@
     <style>
         * { font-family: 'Cairo', sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         
-        html {
+        /* ⚠️ CRITICAL: iOS PWA Fix - Prevent Elastic Scroll / Rubber-banding */
+        html, body {
             height: 100%;
-            overflow: hidden;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Stops whole page from scrolling */
+            overscroll-behavior: none; /* Prevents pull-to-refresh */
+            position: fixed; /* Locks body in place on iOS */
+            user-select: none;
         }
         
         body {
@@ -33,9 +40,12 @@
             background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px), radial-gradient(#cbd5e1 1.5px, #f8f9fa 1.5px);
             background-size: 24px 24px;
             background-position: 0 0, 12px 12px;
-            overscroll-behavior: none;
-            user-select: none;
+        }
+        
+        /* Lock #app container */
+        #app {
             height: 100%;
+            width: 100%;
             overflow: hidden;
         }
         
