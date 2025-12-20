@@ -197,7 +197,7 @@
                         
                         if (!continueGame) {
                             // User chose not to continue - reset to home
-                            state.screen = 'home';
+                    state.screen = 'home';
                             state.currentGame = null;
                         }
                         // else: keep current screen and game state as-is
@@ -234,22 +234,22 @@
             if (!audioCtx) return;
             
             try {
-                if (audioCtx.state === 'suspended') audioCtx.resume(); // Fix for Chrome autoplay policy
+            if (audioCtx.state === 'suspended') audioCtx.resume(); // Fix for Chrome autoplay policy
 
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
 
-                osc.type = type; // 'sine', 'square', 'sawtooth', 'triangle'
-                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.type = type; // 'sine', 'square', 'sawtooth', 'triangle'
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
 
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
 
-                osc.start();
-                osc.stop(audioCtx.currentTime + duration);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
                 
                 // Ensure garbage collection: disconnect nodes after use
                 setTimeout(() => {
@@ -746,7 +746,7 @@
 
             // Fix: Play appropriate sound based on points
             if (points > 0) {
-                playSound('success');
+            playSound('success');
             } else if (points < 0) {
                 playSound('fail');
             }
@@ -920,14 +920,13 @@
 
         function renderHome() {
             return `
-                <div class="flex flex-col h-screen p-4 overflow-hidden bg-slate-50">
-                    <!-- Header (Fixed Height) -->
+                <div class="flex flex-col h-screen max-h-screen p-4 overflow-hidden bg-slate-50">
+                    
                     <div class="text-center pt-8 pb-4 shrink-0">
                         <h1 class="text-4xl font-black text-slate-800 mb-1">لعبة القعدة</h1>
                         <p class="text-slate-500 font-medium">اللمة متحلاش غير بيها</p>
                     </div>
                     
-                    <!-- Surprise Me Button (Fixed Height) -->
                     <div class="shrink-0 mb-4">
                         <button onclick="surpriseMe()" class="w-full py-4 surprise-gradient text-white rounded-2xl font-black text-xl shadow-xl transition transform active:scale-95 hover:scale-[1.02] flex items-center justify-center gap-3">
                             <span class="text-3xl">🎲</span>
@@ -935,22 +934,17 @@
                         </button>
                     </div>
                     
-                    <!-- Games Grid (Scrollable Area - ONLY THIS SCROLLS) -->
-                    <div class="flex-1 overflow-y-auto min-h-0 w-full grid grid-cols-2 gap-3 content-start pb-2">
-                        <!-- SET 3 -->
+                    <div class="flex-1 overflow-y-auto min-h-0 w-full grid grid-cols-2 gap-3 content-start pb-2 pr-1">
                         ${menuButton('lawyer_setup', '👨‍⚖️', 'المحامي اللعين', 'دافع عن المصيبة', 'bg-slate-700')}
                         ${menuButton('indian_setup', '🎬', 'سيناريو هندي', 'تمثيل وأوفرة', 'bg-orange-600')}
                         ${menuButton('bomb_setup', '💣', 'القنبلة', 'باصي بسرعة', 'bg-red-700')}
                         ${menuButton('taboo_setup', '🚫', 'أوعى تقولها', 'ممنوعات كتير', 'bg-rose-900')}
-                        <!-- SET 2 -->
                         ${menuButton('story_setup', '📖', 'حكاية في كلمتين', 'ألفوا قصة', 'bg-amber-600')}
                         ${menuButton('artist_setup', '🎨', 'الرسام الأعمى', 'ارسم وخمن', 'bg-fuchsia-600')}
                         ${menuButton('morph_setup', '🔤', 'الكلمة المتحولة', 'غير حرف', 'bg-cyan-700')}
-                        <!-- SET 1 -->
                         ${menuButton('whisper_setup', '🎧', 'إقرأ شفايفي', 'علي الصوت', 'bg-pink-500')}
                         ${menuButton('debate_setup', '⚖️', 'محكمة', 'إقناع وجدال', 'bg-amber-700')}
                         ${menuButton('never_setup', '✋', 'أنا عمري ما', 'مين عمل؟', 'bg-rose-800')}
-                        <!-- CLASSICS -->
                         ${menuButton('heads_up_setup', '🤯', 'على راسي', 'حط موبايلك', 'bg-blue-600')}
                         ${menuButton('emoji_setup', '🧩', 'فك الإيموجي', 'اسم الفيلم؟', 'bg-yellow-500')}
                         ${menuButton('lyrics_setup', '🎤', 'كمل الأغنية', 'حافظ؟', 'bg-purple-500')}
@@ -967,13 +961,12 @@
                         ${menuButton('likely_setup', '👉', 'مين الكارثة', 'توقعات', 'bg-red-600')}
                     </div>
                     
-                    <!-- Footer Buttons (Fixed Height - Always Visible) -->
-                    <div class="flex gap-3 w-full mt-2 shrink-0">
-                        <button onclick="navigate('players')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2">
+                    <div class="shrink-0 flex gap-3 w-full mt-2 pt-2 border-t border-slate-200/50 bg-slate-50 z-10">
+                        <button onclick="navigate('players')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2 shadow-sm active:scale-95 transition">
                             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                             اللاعبين
                         </button>
-                        <button onclick="navigate('scores')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2">
+                        <button onclick="navigate('scores')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2 shadow-sm active:scale-95 transition">
                             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
                             النتائج
                         </button>
@@ -1463,22 +1456,22 @@
                     if (gameInterval) {
                         clearInterval(gameInterval);
                     }
-                    
-                    // Start new timer
-                    gameInterval = setInterval(() => {
-                        state.currentGame.timeLeft--;
-                        playSound('bomb_tick');
-                        if (state.currentGame.timeLeft <= 0) {
-                            clearInterval(gameInterval);
+                
+                // Start new timer
+                gameInterval = setInterval(() => {
+                    state.currentGame.timeLeft--;
+                    playSound('bomb_tick');
+                    if (state.currentGame.timeLeft <= 0) {
+                        clearInterval(gameInterval);
                             gameInterval = null;
-                            state.currentGame.exploded = true;
-                            state.currentGame.phase = 'result';
-                            updateScore(state.currentGame.player.id, false, -1);
-                            playSound('explode');
-                            saveState();
-                            render();
-                        }
-                    }, 1000);
+                        state.currentGame.exploded = true;
+                        state.currentGame.phase = 'result';
+                        updateScore(state.currentGame.player.id, false, -1);
+                        playSound('explode');
+                        saveState();
+                        render();
+                    }
+                }, 1000);
                 }, 50);
             }
         }
@@ -2054,34 +2047,34 @@
 
                         <!-- Content Layer (non-interactive, above background) -->
                         <div class="absolute inset-0 flex flex-col p-4 bg-blue-600 pointer-events-none z-20">
-                            <!-- Player Name - Glass Frame (Top-Right) -->
+                        <!-- Player Name - Glass Frame (Top-Right) -->
                             <div class="absolute top-4 right-4 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl px-4 py-2 text-white font-bold text-lg">
                                 ${escapeHtml(game.currentPlayer.name)}
-                            </div>
+                        </div>
 
-                            <!-- Timer (Centered) -->
-                            <div class="text-center mb-4 text-white pt-2">
-                                <div class="text-4xl font-black text-yellow-300" id="hu-timer">${game.timeLeft}</div>
-                            </div>
+                        <!-- Timer (Centered) -->
+                        <div class="text-center mb-4 text-white pt-2">
+                            <div class="text-4xl font-black text-yellow-300" id="hu-timer">${game.timeLeft}</div>
+                        </div>
 
-                            <!-- Main Card Area -->
-                            <div class="flex-1 flex items-center justify-center relative mb-4">
+                        <!-- Main Card Area -->
+                        <div class="flex-1 flex items-center justify-center relative mb-4">
                                 <div class="w-full h-full bg-white rounded-3xl shadow-2xl flex items-center justify-center relative overflow-hidden">
-                                    ${game.wordHidden ? `
+                                ${game.wordHidden ? `
                                         <div class="text-center animate-pulse pointer-events-auto cursor-pointer z-30" onclick="revealHeadsUpWord()">
-                                            <div class="text-8xl text-blue-200 font-black mb-4">?</div>
-                                            <p class="text-blue-500 font-bold text-xl">دوس عشان تظهر الكلمة</p>
-                                        </div>
-                                    ` : `
-                                        <!-- Rotated Text Container -->
-                                        <div class="rotate-90-text flex items-center justify-center" style="width: 85vh; max-width: 90vh;">
-                                            <h1 class="text-6xl md:text-8xl font-black text-slate-800 leading-tight whitespace-normal break-words text-center w-full">
-                                                ${game.currentWord}
-                                            </h1>
-                                        </div>
-                                    `}
-                                </div>
+                                        <div class="text-8xl text-blue-200 font-black mb-4">?</div>
+                                        <p class="text-blue-500 font-bold text-xl">دوس عشان تظهر الكلمة</p>
+                                    </div>
+                                ` : `
+                                    <!-- Rotated Text Container -->
+                                    <div class="rotate-90-text flex items-center justify-center" style="width: 85vh; max-width: 90vh;">
+                                        <h1 class="text-6xl md:text-8xl font-black text-slate-800 leading-tight whitespace-normal break-words text-center w-full">
+                                            ${game.currentWord}
+                                        </h1>
+                                    </div>
+                                `}
                             </div>
+                        </div>
 
                             <!-- UX Instructions (Bottom Center) -->
                             <div class="text-center pb-4">
