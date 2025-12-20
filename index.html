@@ -19,11 +19,15 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="gameData.js"></script>
+    <script src="js/ggameData.js"></script>
     <style>
         * { font-family: 'Cairo', sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         
-        /* Safe Area Support for Notch/Home Indicator */
+        html {
+            height: 100%;
+            overflow: hidden;
+        }
+        
         body {
             background-color: #f8f9fa;
             background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px), radial-gradient(#cbd5e1 1.5px, #f8f9fa 1.5px);
@@ -31,11 +35,8 @@
             background-position: 0 0, 12px 12px;
             overscroll-behavior: none;
             user-select: none;
-            /* Safe area padding for devices with notch/home indicator */
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
+            height: 100%;
+            overflow: hidden;
         }
         
         /* Page Transitions - Snappy Entry Animation */
@@ -126,8 +127,8 @@
         <div class="max-w-md mx-auto min-h-screen shadow-2xl bg-white/95 backdrop-blur-sm relative overflow-hidden border-x-2 border-slate-100 flex flex-col">
             <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-rose-500 via-amber-400 to-indigo-500 z-50"></div>
             
-            <!-- Global Controls - Vertical Glass Bar (Safe Area Support) -->
-            <div id="control-bar" class="fixed z-50 flex flex-col items-center bg-white/25 backdrop-blur-lg border border-white/30 shadow-lg rounded-full p-2 gap-2 transition-all hover:bg-white/35" style="top: calc(1rem + env(safe-area-inset-top)); left: calc(1rem + env(safe-area-inset-left));">
+            <!-- Global Controls - Vertical Glass Bar -->
+            <div id="control-bar" class="fixed top-4 left-4 z-50 flex flex-col items-center bg-white/25 backdrop-blur-lg border border-white/30 shadow-lg rounded-full p-2 gap-2 transition-all hover:bg-white/35">
                 <!-- Sound Button (Top) -->
                 <button onclick="toggleMute()" id="muteBtn" class="w-10 h-10 flex items-center justify-center rounded-full bg-white/50 hover:scale-110 hover:bg-white/70 transition-all shadow-sm text-gray-800">
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
@@ -919,16 +920,23 @@
 
         function renderHome() {
             return `
-                <div class="flex flex-col h-screen p-4">
-                    <div class="text-center pt-8 pb-4"><h1 class="text-4xl font-black text-slate-800 mb-1">لعبة القعدة</h1><p class="text-slate-500 font-medium">اللمة متحلاش غير بيها</p></div>
+                <div class="flex flex-col h-screen p-4 overflow-hidden bg-slate-50">
+                    <!-- Header (Fixed Height) -->
+                    <div class="text-center pt-8 pb-4 shrink-0">
+                        <h1 class="text-4xl font-black text-slate-800 mb-1">لعبة القعدة</h1>
+                        <p class="text-slate-500 font-medium">اللمة متحلاش غير بيها</p>
+                    </div>
                     
-                    <!-- Surprise Me Button -->
-                    <button onclick="surpriseMe()" class="w-full py-4 mb-4 surprise-gradient text-white rounded-2xl font-black text-xl shadow-xl transition transform active:scale-95 hover:scale-[1.02] flex items-center justify-center gap-3">
-                        <span class="text-3xl">🎲</span>
-                        <span>فاجئني! (لعبة عشوائية)</span>
-                    </button>
+                    <!-- Surprise Me Button (Fixed Height) -->
+                    <div class="shrink-0 mb-4">
+                        <button onclick="surpriseMe()" class="w-full py-4 surprise-gradient text-white rounded-2xl font-black text-xl shadow-xl transition transform active:scale-95 hover:scale-[1.02] flex items-center justify-center gap-3">
+                            <span class="text-3xl">🎲</span>
+                            <span>فاجئني! (لعبة عشوائية)</span>
+                        </button>
+                    </div>
                     
-                    <div class="w-full grid grid-cols-2 gap-3 flex-1 overflow-y-auto pb-2 content-start min-h-0">
+                    <!-- Games Grid (Scrollable Area - ONLY THIS SCROLLS) -->
+                    <div class="flex-1 overflow-y-auto min-h-0 w-full grid grid-cols-2 gap-3 content-start pb-2">
                         <!-- SET 3 -->
                         ${menuButton('lawyer_setup', '👨‍⚖️', 'المحامي اللعين', 'دافع عن المصيبة', 'bg-slate-700')}
                         ${menuButton('indian_setup', '🎬', 'سيناريو هندي', 'تمثيل وأوفرة', 'bg-orange-600')}
@@ -959,8 +967,8 @@
                         ${menuButton('likely_setup', '👉', 'مين الكارثة', 'توقعات', 'bg-red-600')}
                     </div>
                     
-                    <!-- Footer Buttons (Icons Fixed) -->
-                    <div class="flex gap-3 w-full mt-2">
+                    <!-- Footer Buttons (Fixed Height - Always Visible) -->
+                    <div class="flex gap-3 w-full mt-2 shrink-0">
                         <button onclick="navigate('players')" class="flex-1 p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 flex items-center justify-center gap-2">
                             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                             اللاعبين
