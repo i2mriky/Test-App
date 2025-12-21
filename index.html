@@ -1681,52 +1681,12 @@
         }
 
         function headsUpCorrect() {
-            // Validation: Must reveal card first
-            if (state.currentGame.wordHidden) {
-                playSound('fail');
-                
-                // Create Warning Toast (Same style/text as Spy Game)
-                const warning = document.createElement('div');
-                warning.className = 'fixed top-20 left-1/2 -translate-x-1/2 bg-red-600 text-white px-8 py-3 rounded-full font-bold shadow-2xl z-[100] animate-in border-2 border-red-400 whitespace-nowrap';
-                warning.innerText = '( طب خد فكره شوف الكلمه .. فووووقو بقي 😡 )';
-                document.body.appendChild(warning);
-                
-                // Fade out and remove
-                setTimeout(() => {
-                    warning.style.opacity = '0';
-                    warning.style.transition = 'opacity 0.3s';
-                    setTimeout(() => warning.remove(), 300);
-                }, 2000);
-                
-                return; // Stop execution
-            }
-
             state.currentGame.score++;
             playSound('success');
             headsUpNextWord();
         }
 
         function headsUpPass() {
-            // Validation: Must reveal card first
-            if (state.currentGame.wordHidden) {
-                playSound('fail');
-                
-                // Create Warning Toast (Same style/text as Spy Game)
-                const warning = document.createElement('div');
-                warning.className = 'fixed top-20 left-1/2 -translate-x-1/2 bg-red-600 text-white px-8 py-3 rounded-full font-bold shadow-2xl z-[100] animate-in border-2 border-red-400 whitespace-nowrap';
-                warning.innerText = '( طب خد فكره شوف الكلمه .. فووووقو بقي 😡 )';
-                document.body.appendChild(warning);
-                
-                // Fade out and remove
-                setTimeout(() => {
-                    warning.style.opacity = '0';
-                    warning.style.transition = 'opacity 0.3s';
-                    setTimeout(() => warning.remove(), 300);
-                }, 2000);
-                
-                return; // Stop execution
-            }
-
             state.currentGame.skipped++;
             playSound('fail');
             headsUpNextWord();
@@ -1842,8 +1802,8 @@
                                     </div>
                                 ` : `
                                     <!-- Rotated Text Container -->
-                                    <div class="rotate-90-text flex items-center justify-center" style="width: 85vh; max-width: 90vh;">
-                                        <h1 class="text-6xl md:text-8xl font-black text-slate-800 leading-tight whitespace-normal break-words text-center w-full">
+                                    <div class="rotate-90-text text-center w-[200vh]">
+                                        <h1 class="text-6xl md:text-8xl font-black text-slate-800 leading-tight">
                                             ${game.currentWord}
                                         </h1>
                                     </div>
