@@ -279,6 +279,8 @@
         function goHome() { 
             playSound('click'); 
             if (gameInterval) clearInterval(gameInterval);
+            // TASK 3: Clear spy game tips interval
+            if (tipsInterval) clearInterval(tipsInterval);
             state.currentGame = null; 
             saveState();
             navigate('home'); 
@@ -290,6 +292,11 @@
             if (gameInterval) {
                 clearInterval(gameInterval);
                 gameInterval = null;
+            }
+            // TASK 3: Clear spy game tips interval
+            if (tipsInterval) {
+                clearInterval(tipsInterval);
+                tipsInterval = null;
             }
             state.screen = screen; 
             render(); // Immediate render with entry animation
@@ -630,6 +637,26 @@
             }
         }
 
+        // ===== TASK 1: DYNAMIC TEAM SCORING =====
+        function recalculateTeamScores() {
+            if (!state.teamMode) return;
+            
+            // Reset team scores
+            state.teams.forEach(team => {
+                team.score = 0;
+            });
+            
+            // Recalculate from player scores
+            state.teams.forEach(team => {
+                team.members.forEach(member => {
+                    const player = state.players.find(p => p.id === member.id);
+                    if (player) {
+                        team.score += player.score;
+                    }
+                });
+            });
+        }
+
         function updateScore(id, isTeam, points = 1) {
             // 1. Update Player Score
             const playerIndex = state.players.findIndex(p => p.id === id);
@@ -647,29 +674,8 @@
                 }
             }
 
-            // 2. Sync with Team (If Mode is Active)
-            if (state.teamMode) {
-                // Find which team contains this player
-                const teamA = state.teams[0];
-                const teamB = state.teams[1];
-                
-                const inTeamA = teamA.members.some(m => m.id === id);
-                const inTeamB = teamB.members.some(m => m.id === id);
-
-                if (inTeamA) {
-                    teamA.score += points;
-                    // Team milestone animations
-                    if (teamA.score % 5 === 0) {
-                        createConfetti();
-                    }
-                } else if (inTeamB) {
-                    teamB.score += points;
-                    // Team milestone animations
-                    if (teamB.score % 5 === 0) {
-                        createConfetti();
-                    }
-                }
-            }
+            // 2. TASK 1: Recalculate Team Scores Dynamically
+            recalculateTeamScores();
 
             playSound('success');
             saveState();
@@ -1065,6 +1071,12 @@
         }
         function addPlayer(e) { e.preventDefault(); const input = document.getElementById('newPlayerName'); if(input.value.trim()){ state.players.push({id: Date.now(), name: input.value.trim(), score: 0}); saveState(); render(); } }
         function removePlayer(id) {
+            // TASK 4: Guard Clause - Prevent deletion of active player
+            if (state.currentGame && state.currentGame.player && state.currentGame.player.id === id) {
+                alert('لا يمكن حذف اللاعب أثناء دوره!');
+                return;
+            }
+            
             // Confirmation dialog before deletion
             if (!confirm('هل أنت متأكد من حذف هذا اللاعب؟')) {
                 return; // User cancelled
@@ -1077,6 +1089,9 @@
             state.teams.forEach(team => {
                 team.members = team.members.filter(m => m.id !== id);
             });
+            
+            // TASK 1: Recalculate Team Scores
+            recalculateTeamScores();
             
             // ⚠️ CRITICAL: Save state to persist the deletion
             saveState();
@@ -1149,7 +1164,10 @@
             // 4. Update the "teamId" property on the player object itself (for redundancy/safety)
             player.teamId = teamId;
 
-            // 5. ⚠️ CRITICAL: Save and Render
+            // 5. TASK 1: Recalculate Team Scores
+            recalculateTeamScores();
+
+            // 6. ⚠️ CRITICAL: Save and Render
             playSound('click');
             saveState(); // <--- This ensures the assignment persists on refresh
             render();
@@ -1267,6 +1285,13 @@
             gameInterval = setInterval(() => {
                 state.currentGame.timeLeft--;
                 playSound('bomb_tick');
+                
+                // TASK 2: Update timer directly in DOM (no render() call for performance)
+                const timerEl = document.getElementById('game-timer');
+                if (timerEl) {
+                    timerEl.innerText = getTimer(state.currentGame.timeLeft);
+                }
+                
                 if (state.currentGame.timeLeft <= 0) {
                     clearInterval(gameInterval);
                     state.currentGame.exploded = true;
@@ -1284,10 +1309,14 @@
                 // Stop current timer
                 if (gameInterval) clearInterval(gameInterval);
                 
+                // TASK 2: Physical Passing - Find current player's index and select next player
+                const currentPlayerIndex = state.players.findIndex(p => p.id === state.currentGame.player.id);
+                const nextPlayerIndex = (currentPlayerIndex + 1) % state.players.length;
+                const newPlayer = state.players[nextPlayerIndex];
+                
                 // Change category and player
                 const newCategory = BOMB_DATA[Math.floor(Math.random() * BOMB_DATA.length)];
                 const newCount = Math.floor(Math.random() * 3) + 3; // عدد عشوائي من 3 لـ 5
-                const newPlayer = getFairPlayer();
                 const newTime = Math.floor(Math.random() * (60 - 10 + 1) + 10);
                 
                 state.currentGame.category = newCategory;
@@ -1302,6 +1331,13 @@
                 gameInterval = setInterval(() => {
                     state.currentGame.timeLeft--;
                     playSound('bomb_tick');
+                    
+                    // TASK 2: Update timer directly in DOM (no render() call for performance)
+                    const timerEl = document.getElementById('game-timer');
+                    if (timerEl) {
+                        timerEl.innerText = getTimer(state.currentGame.timeLeft);
+                    }
+                    
                     if (state.currentGame.timeLeft <= 0) {
                         clearInterval(gameInterval);
                         state.currentGame.exploded = true;
